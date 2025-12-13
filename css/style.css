@@ -1,0 +1,250 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body, html {
+    height: 100%;
+    font-family: 'Poppins', sans-serif;
+
+}
+
+.container-fluid {
+    height: 100%;
+}
+
+/* LEFT SIDE */
+.left-side {
+    max-width: 100%;
+    background: url("../img/onboarding-bg.png");
+}
+
+.logo {
+    position: absolute;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+}
+
+.logo img {
+    height: 150px;
+}
+
+.robot {
+    position: absolute;
+    bottom: 50px;
+    left: 45%;
+    transform: translateX(-60%);
+    width: 500px;
+    z-index: 10;
+    animation: float 6s ease-in-out infinite;
+}
+
+.robot-2 {
+    width: 300px;
+    left: 50%;
+}
+
+.robot-3 {
+    width: 400px;
+    left: 50%;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateX(-50%) translateY(0);
+    }
+
+    50% {
+        transform: translateX(-50%) translateY(-30px);
+    }
+}
+
+/* RIGHT SIDE */
+.right-side {
+    max-width: 100%;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: top;
+    overflow-x: hidden;
+}
+
+.welcome-badge {
+    background: #E2E8F0;
+    color: #c62828;
+    padding: 5px 84px;
+    border-radius: 50px;
+    display: inline-block;
+    margin-bottom: 20px;
+    margin-top: 20px;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+h1 {
+    font-size: 2.45rem;
+    font-weight: 800;
+    color: #222;
+    line-height: 1.2;
+    margin-bottom: 20px;
+}
+
+.desc {
+    color: #555;
+    line-height: 1.5;
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+}
+
+.feature-card {
+    background: #f8f9fa;
+    border-radius: 14px;
+    padding: 12px;
+    text-align: left;
+    transition: transform 0.3s;
+    border: rgb(245, 245, 245) 2px solid;
+}
+
+.feature-card:hover {
+    transform: translateY(-8px);
+}
+
+.feature-card img {
+    width: 90px;
+    margin-bottom: 5px;
+}
+
+.feature-title {
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.btn-continue {
+    background: #d32f2f;
+    border: none;
+    border-radius: 15px;
+    padding: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 20px;
+    transition: background 0.3s;
+    color: #fff;
+}
+
+.btn-continue:hover {
+    background: #e0e0e0;
+    color: #b71c1c;
+}
+
+.btn-back {
+    background: #fff;
+    border: none;
+    border-radius: 15px;
+    padding: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 20px;
+    color: #b71c1c;
+    transition: background 0.3s;
+    border: 2px solid #b71c1c;
+}
+
+.btn-back:hover {
+    background: #e0e0e0;
+    color: #b71c1c;
+}
+
+.skip-link {
+    color: #d32f2f;
+    margin-top: 12px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.skip-link:hover {
+    color: #999;
+    text-decoration: underline;
+}
+
+/* Stitch progress bar */
+.stitch-progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: 20px;
+    width: 100%;
+    margin: 0 ;
+    padding: 0 10px;
+}
+
+.stitch {
+    flex: 1;
+    height: 5px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.stitch.active {
+    background: #d32f2f;
+}
+
+/* Smooth animation saat halaman berikutnya (bisa pake js juga) */
+.stitch-progress[data-step="1"] .stitch:nth-child(1) {
+    background: #d32f2f;
+}
+
+.stitch-progress[data-step="2"] .stitch:nth-child(-n+2) {
+    background: #d32f2f;
+}
+
+.stitch-progress[data-step="3"] .stitch:nth-child(-n+3) {
+    background: #d32f2f;
+}
+
+.stitch-progress[data-step="4"] .stitch {
+    background: #d32f2f;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .robot {
+        width: 300px;
+    }
+
+    .light-beam {
+        width: 450px;
+    }
+}
+
+@media (max-width: 768px) {
+    .left-side {
+        display: none;
+    }
+
+    .right-side {
+        padding: 40px 20px;
+    }
+
+    h1 {
+        font-size: 2.2rem;
+    }
+
+    .stitch-progress {
+        gap: 16px;
+        max-width: 320px;
+    }
+
+    .stitch {
+        height: 5px;
+    }
+}

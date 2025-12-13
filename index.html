@@ -1,185 +1,67 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>OmniMap - Kenali Potensi Dirimu</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <title>OmniMap</title>
+    <!-- <style>
+        body,
+        html {
+            height: 100%;
+            margin: 0;
+            background: #d32f2f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-  <!-- Bootstrap 5 CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        .splash {
+            text-align: center;
+            color: white;
+        }
 
-  <style>
-    body, html {
-      height: 100%;
-      margin: 0;
-      overflow: hidden;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
+        .splash img {
+            height: 80px;
+            margin-bottom: 20px;
+        }
 
-    .container-fluid {
-      height: 100%;
-    }
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #fff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 30px auto;
+        }
 
-    /* Sisi kiri - gambar robot + background merah */
-    .left-side {
-      background: url('img/1-Onboarding.png') center/cover no-repeat; /* <-- ganti dengan nama file gambar kamu */
-      
-      position: fixed;
-    }
-
-    .logo {
-      position: absolute;
-      top: 40px;
-      left: 40px;
-      z-index: 10;
-    }
-
-    .logo img {
-      height: 60px;
-    }
-
-    /* Sisi kanan - konten */
-    .right-side {
-      background: #ffffff;
-      padding: 40px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-
-    .welcome-badge {
-      display: inline-block;
-      background: #fee;
-      color: #c33;
-      padding: 8px 20px;
-      border-radius: 50px;
-      font-size: 0.9rem;
-      margin-bottom: 20px;
-    }
-
-    h1 {
-      font-size: 2.5rem;
-      font-weight: 700;
-      color: #222;
-      margin-bottom: 20px;
-    }
-
-    .desc {
-      color: #555;
-      line-height: 1.6;
-      margin-bottom: 40px;
-    }
-
-    .feature-card {
-      background: #f8f9fa;
-      border-radius: 16px;
-      padding: 20px;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .feature-card img {
-      width: 48px;
-      height: 48px;
-      margin-bottom: 15px;
-    }
-
-    .feature-title {
-      font-weight: 600;
-      color: #333;
-      margin-bottom: 8px;
-    }
-
-    .btn-primary {
-      background: #d32f2f;
-      border: none;
-      border-radius: 50px;
-      padding: 14px 0;
-      font-weight: 600;
-      font-size: 1.1rem;
-    }
-
-    .btn-primary:hover {
-      background: #b71c1c;
-    }
-
-    .skip-link {
-      color: #999;
-      text-decoration: none;
-      margin-top: 20px;
-      align-self: center;
-    }
-
-    .skip-link:hover {
-      color: #d32f2f;
-    }
-
-    @media (max-width: 768px) {
-      .left-side {
-        display: none; /* sembunyikan sisi kiri di mobile */
-      }
-      .right-side {
-        padding: 30px 20px;
-      }
-      h1 {
-        font-size: 2rem;
-      }
-    }
-  </style>
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style> -->
 </head>
+
 <body>
+    <!-- <div class="splash">
+        <img src="img/logo.png" alt="OmniMap">
+        <h1 style="font-weight:800; font-size:2.5rem;">OmniMap</h1>
+        <div class="loader"></div>
+    </div> -->
 
-<div class="container-fluid g-0">
-  <div class="row h-100">
-
-    <!-- Kiri: Background gambar robot -->
-    <div class="col-lg-6 left-side position-relative">
-
-    </div>
-
-    <!-- Kanan: Konten -->
-    <div class="col-lg-6 right-side">
-      <div class="text-center text-lg-start">
-
-        <span class="welcome-badge">Selamat Datang</span>
-
-        <h1>Kenali Potensi Dirimu Lebih Dalam</h1>
-
-        <p class="desc">
-          OmniMap menggunakan <strong>Tes OMNI berbasis AI</strong> untuk menganalisis kepribadian dan potensimu secara komprehensif. 
-          Pahami kekuatan, kelemahan, dan kecenderungan perilakumu dengan akurat.
-        </p>
-
-        <div class="row g-4">
-          <div class="col-md-6">
-            <div class="feature-card">
-              <img src="https://via.placeholder.com/64/4caf50/ffffff?text=✓" alt="Akurat">
-              <div class="feature-title">Analisis Akurat</div>
-              <small class="text-muted">AI menganalisis kepribadianmu secara objektif</small>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <div class="feature-card">
-              <img src="https://via.placeholder.com/64/9c27b0/ffffff?text=✎" alt="Visual">
-              <div class="feature-title">Visual & Naratif</div>
-              <small class="text-muted">Hasil tes disajikan dalam bentuk mudah dipahami</small>
-            </div>
-          </div>
-        </div>
-
-        <button class="btn btn-primary w-100 mt-4" onclick="window.location.href='login.html'">
-          Lanjut
-        </button>
-
-        <a href="login.html" class="skip-link">Lewati dan mulai login aplikasi</a>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- Bootstrap JS (optional, kalau butuh komponen interaktif lain) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
+    <script>
+        setTimeout(() => {
+            window.location.href = "pages/onboarding-1.html";
+        }, 2000);
+    </script>
 </body>
+
 </html>
