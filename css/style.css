@@ -3,7 +3,7 @@
 * {
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
+    /* box-sizing: border-box; */
 }
 
 body, html {
@@ -213,6 +213,37 @@ h1 {
 
 .stitch-progress[data-step="4"] .stitch {
     background: #d32f2f;
+}
+
+/* Login */
+.header-login{
+    background-color: #CE181B;
+    height: 350px;
+    top: 20px;
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-content p{
+    font-size: 1rem;
+}
+
+.logo-header{
+    overflow: hidden;
+    margin: 0 50px;
+    top: 100px;
+}
+
+.right-robot {
+    transform: rotateY(180deg);
+}
+
+.right-robot .left-robot {
+    position: absolute;
 }
 
 /* Responsive */
