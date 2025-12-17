@@ -18,7 +18,7 @@
     <!-- SIDEBAR -->
     <section id="sidebar">
         <a href="#" class="brand omnimap-brand">
-            <img src="../img/logo.svg" class="omnimap-logo-full" alt="" >
+            <img src="../img/logo.svg" class="omnimap-logo-full" alt="">
             <img src="../img/logo-head.svg" class="omnimap-logo-icon" alt="OmniMap Icon">
         </a>
         <ul class="side-menu">
@@ -52,8 +52,183 @@
         <!-- NAVBAR -->
 
         <!-- MAIN -->
-        <main>
+        <main class="omnimap-content-wrapper">
+            <div class="btnChatbot">
+                <a href="chatbot.html"><img src="../img/chatbot.svg" alt=""></a>
+            </div>
+            <div class="container header-hasil-tes-omni">
+                <div class="row hasil-tes-logo">
+                    <div class="col-md-6 hasil-test-content">
+                        <h1 style="color: #fff;">Welcome, Cyntia!</h1>
+                        <p>Temukan insight kepribadianmu sekarang dan analisis hasil tes OMNI mu!</p>
+                    </div>
+                    <div class="col-md-6 hasil-tes-robot">
+                        <img src="../img/robot-5.svg" alt="">
+                    </div>
+                </div>
+            </div>
+            <div class="container mb-4">
+                <div class="row mt-4 stats-hasil-tes-omni">
+                    <div class="col-md-4">
+                        <div class="card-stats-hasil" id="skorAvg">
+                            <div class="row">
+                                <div class="col-md-6 text-start">
+                                    <small>Skor Rata-Rata</small>
+                                    <h4 id="averageScore">85</h4>
+                                </div>
+                                <div class="col-md-6 bg-icon-hasil-tes">
+                                    <img src="../img/pencil-2.png" alt="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card-stats-hasil" id="skorAvg">
+                            <div class="row">
+                                <div class="col-md-6 text-start">
+                                    <small>Status Tes</small>
+                                    <h4 id="statusTest">Selesai</h4>
+                                </div>
+                                <div class="col-md-6 bg-icon-hasil-tes">
+                                    <img src="../img/Folder-2.png" alt="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card-stats-hasil" id="skorAvg">
+                            <div class="row">
+                                <div class="col-md-6 text-start">
+                                    <small>Rekomendasi</small>
+                                    <h4 id="statusTest">3</h4>
+                                </div>
+                                <div class="col-md-6 bg-icon-hasil-tes">
+                                    <img src="../img/confirm-test.svg" alt="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card-stats-hasil p-5 mb-4 text-start">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h4 class="fw-900 mb-0">Dimensi Kepribadian</h4>
+                                <a href="#" class="text-danger text-decoration-none fw-bold" style="font-size: 0.9rem;">
+                                    Lihat Detail <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
 
+                            <div class="omni-personality-progress-item">
+                                <div class="omni-personality-progress-label d-flex justify-content-between">
+                                    <span>Aestheticism</span>
+                                    <span>75</span>
+                                </div>
+                                <div class="progress omni-personality-progress-track">
+                                    <div class="progress-bar omni-personality-progress-fill" role="progressbar"
+                                        style="width: 75%">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="omni-personality-progress-item">
+                                <div class="omni-personality-progress-label d-flex justify-content-between">
+                                    <span>Ambition</span>
+                                    <span>32</span>
+                                </div>
+                                <div class="progress omni-personality-progress-track">
+                                    <div class="progress-bar omni-personality-progress-fill" role="progressbar"
+                                        style="width: 32%">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="omni-personality-progress-item">
+                                <div class="omni-personality-progress-label d-flex justify-content-between">
+                                    <span>Anxiety</span>
+                                    <span>54</span>
+                                </div>
+                                <div class="progress omni-personality-progress-track">
+                                    <div class="progress-bar omni-personality-progress-fill" role="progressbar"
+                                        style="width: 54%">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="omni-personality-progress-item">
+                                <div class="omni-personality-progress-label d-flex justify-content-between">
+                                    <span>Assertiveness</span>
+                                    <span>89</span>
+                                </div>
+                                <div class="progress omni-personality-progress-track">
+                                    <div class="progress-bar omni-personality-progress-fill" role="progressbar"
+                                        style="width: 89%">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="omni-personality-progress-item">
+                                <div class="omni-personality-progress-label d-flex justify-content-between">
+                                    <span>Conventionality</span>
+                                    <span>20</span>
+                                </div>
+                                <div class="progress omni-personality-progress-track">
+                                    <div class="progress-bar omni-personality-progress-fill" role="progressbar"
+                                        style="width: 20%">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="omni-insight-card mb-4">
+                            <div class="d-flex align-items-start">
+                                <div>
+                                    <h1 class="fw-bold" style="color: #fff;">💡Insight Kepribadian</h1>
+                                    <p class="mt-2 mb-3" style="opacity: 0.95; line-height: 1.6;">
+                                        Berdasarkan hasil tes OMNI kamu, kamu memiliki tingkat
+                                        <strong>Excitement</strong>
+                                        dan <strong>Dutifulness</strong> yang tinggi.
+                                        Ini menunjukkan bahwa kamu adalah pribadi yang antusias dan bertanggung
+                                        jawab!
+                                    </p>
+                                    <div class="mt-4">
+                                        <span class="omni-insight-badge">Antusias</span>
+                                        <span class="omni-insight-badge">Bertanggung Jawab</span>
+                                        <span class="omni-insight-badge">Ekspresif</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-7 mb-4">
+                        <div class="card-stats-hasil">
+                            <h5 class="omni-chart-title">Waktu kamu sering dihabisin buat...</h5>
+                            <canvas id="omniUniqueBarChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="col-md-5 mb-4">
+                        <div class="card-stats-hasil">
+                            <h5 class="omni-chart-title text-center">Top 4 Dimensi Kepribadianmu</h5>
+                            <!-- <div
+                                style="position: relative; height: 260px; width: 100%; display: flex; justify-content: center;">
+                                <canvas id="omniUniquePieChart"></canvas>
+                            </div> -->
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
         <!-- MAIN -->
     </section>

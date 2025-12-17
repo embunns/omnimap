@@ -835,6 +835,33 @@ nav .toggle-sidebar {
     padding: 5px 20px;
 }
 
+/* =========== BUTTON FLOATING CHATBOT ============*/
+.btnChatbot .img{
+    width: 40px;
+
+}
+
+.btnChatbot{
+    width: 60px;
+    height: 60px;
+    background: #c62828;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    text-decoration: none;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 1000;
+    transition: background 0.3s;
+}
+
+.btnChatbot:hover{
+    background: #731515;
+}
+
 
 /* ===== RESPONSIVE ===== */
 
@@ -842,7 +869,7 @@ nav .toggle-sidebar {
     .header-hasil-tes-omni {
         padding: 30px auto;
         height: 200px;
-        width: 92%;
+        /* max-width: fit-content; */
     }
 }
 
