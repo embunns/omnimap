@@ -1,66 +1,104 @@
-//show password
- // Ambil elemen DOM
- const tooglePassword = document.querySelector('#tooglePassword');
- const password = document.querySelector('#password');
-
- // Tambahkan event listener untuk ikon
- tooglePassword.addEventListener('click', () => {
-     // Ubah tipe input antara 'password' dan 'text'
-     const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
-     password.setAttribute('type', type);
-
-     // Ubah ikon mata
-     tooglePassword.classList.toggle('bi-eye');
-     tooglePassword.classList.toggle('bi-eye-slash');
- });
-
 document.addEventListener("DOMContentLoaded", () => {
-    const password = document.getElementById("password");
+
+    /* =======================
+       SHOW / HIDE PASSWORD
+    ======================== */
+    const togglePassword = document.getElementById("tooglePassword");
+    const passwordInput = document.getElementById("password");
+
+    if (togglePassword && passwordInput) {
+        togglePassword.addEventListener("click", () => {
+            const type =
+                passwordInput.getAttribute("type") === "password"
+                    ? "text"
+                    : "password";
+
+            passwordInput.setAttribute("type", type);
+            togglePassword.classList.toggle("bi-eye");
+            togglePassword.classList.toggle("bi-eye-slash");
+        });
+    }
+
+    /* =======================
+       PASSWORD VALIDATION
+    ======================== */
     const passwordError = document.getElementById("passwordError");
     const loginBtn = document.getElementById("btn-login");
 
-    if (!loginBtn) return; // safety check
+    if (loginBtn && passwordInput) {
+        loginBtn.addEventListener("click", e => {
+            e.preventDefault();
 
-    loginBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-
-        // reset error
-        passwordError.classList.add("d-none");
-        password.classList.remove("is-invalid");
-
-        // cek password kosong
-        if (password.value.trim() === "") {
-            passwordError.classList.remove("d-none");
-            password.classList.add("is-invalid");
-            return;
-        }
-    });
-
-    //delete warning when typing
-    password.addEventListener("input", () => {
-        if (password.value.trim() !== "") {
             passwordError.classList.add("d-none");
-            password.classList.remove("is-invalid");
-        }
+            passwordInput.classList.remove("is-invalid");
+
+            if (passwordInput.value.trim() === "") {
+                passwordError.classList.remove("d-none");
+                passwordInput.classList.add("is-invalid");
+                return;
+            }
+
+            // MODAL SUCCESS
+            const modalEl = document.getElementById("loginSuccessModal");
+            if (modalEl) {
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+
+                setTimeout(() => {
+                    window.location.href = "dashboard.html";
+                }, 2000);
+            }
+        });
+
+        passwordInput.addEventListener("input", () => {
+            if (passwordInput.value.trim() !== "") {
+                passwordError.classList.add("d-none");
+                passwordInput.classList.remove("is-invalid");
+            }
+        });
+    }
+
+    /* =======================
+       SIDEBAR DROPDOWN
+    ======================== */
+    const sidebar = document.getElementById("sidebar");
+    const allDropdown = document.querySelectorAll("#sidebar .side-dropdown");
+
+    allDropdown.forEach(dropdown => {
+        const trigger = dropdown.parentElement.querySelector("a:first-child");
+
+        trigger.addEventListener("click", e => {
+            e.preventDefault();
+
+            allDropdown.forEach(d => {
+                if (d !== dropdown) {
+                    d.classList.remove("show");
+                    d.parentElement
+                        .querySelector("a:first-child")
+                        .classList.remove("active");
+                }
+            });
+
+            trigger.classList.toggle("active");
+            dropdown.classList.toggle("show");
+        });
     });
-});
 
-//modal login success and redirect to dashboard
-document.addEventListener("DOMContentLoaded", () => {
-    const loginBtn = document.getElementById("btn-login");
+    /* =======================
+       SIDEBAR COLLAPSE (FIXED)
+    ======================== */
+    const toggleSidebar = document.querySelector("nav .toggle-sidebar");
 
-    loginBtn.addEventListener("click", (e) => {
-        e.preventDefault();
+    if (toggleSidebar && sidebar) {
+        toggleSidebar.addEventListener("click", () => {
+            sidebar.classList.toggle("hide");
 
-        // tampilkan modal
-        const modal = new bootstrap.Modal(
-            document.getElementById("loginSuccessModal")
-        );
-        modal.show();
-
-        // redirect setelah 2 detik
-        setTimeout(() => {
-            window.location.href = "dashboard.html";
-        }, 2000);
-    });
+            allDropdown.forEach(item => {
+                item.classList.remove("show");
+                item.parentElement
+                    .querySelector("a:first-child")
+                    .classList.remove("active");
+            });
+        });
+    }
 });
