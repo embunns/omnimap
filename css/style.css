@@ -352,20 +352,20 @@ h1 {
 
 /* SIDEBAR */
 #sidebar {
-	position: fixed;
-	max-width: 260px;
-	width: 100%;
-	background: #fff;
-	top: 0;
-	left: 0;
-	height: 100%;
-	overflow-y: auto;
-	scrollbar-width: none;
-	transition: all .3s ease;
-	z-index: 200;
+    position: fixed;
+    max-width: 260px;
+    width: 100%;
+    background: #fff;
+    top: 0;
+    left: 0;
+    height: 100%;
+    overflow-y: auto;
+    scrollbar-width: none;
+    transition: all .3s ease;
+    z-index: 200;
 }
 
-#sidebar img{
+#sidebar img {
     width: 250px;
     display: flex;
     align-items: center;
@@ -374,80 +374,92 @@ h1 {
     padding: 20px;
 }
 
-#sidebar a{
+#sidebar a {
     text-decoration: none;
 }
 
-#sidebar li{
+#sidebar li {
     list-style: none;
 }
+
 #sidebar.hide {
-	max-width: 60px;
-}
-#sidebar::-webkit-scrollbar {
-	display: none;
-}
-#sidebar .brand {
-	font-size: 24px;
-	display: flex;
-	align-items: center;
-	height: 64px;
-	font-weight: 1000;
-	color: #6c757d;
-	position: sticky;
-	top: 20px;
-	left: 0;
-	z-index: 100;
-	background: #fff;
-	transition: all .3s ease;
-	padding: 0 6px;
-}
-#sidebar .icon {
-	min-width: 48px;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	margin-right: 6px;
-}
-#sidebar .icon-right {
-	margin-left: auto;
-	transition: all .3s ease;
-}
-#sidebar .side-menu {
-	margin: 36px 0;
-	padding: 0 20px;
-	transition: all .3s ease;
-}
-#sidebar.hide .side-menu {
-	padding: 0 6px;
+    max-width: 60px;
 }
 
-.side-menu i{
+#sidebar::-webkit-scrollbar {
+    display: none;
+}
+
+#sidebar .brand {
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    height: 64px;
+    font-weight: 1000;
+    color: #6c757d;
+    position: sticky;
+    top: 20px;
+    left: 0;
+    z-index: 100;
+    background: #fff;
+    transition: all .3s ease;
+    padding: 0 6px;
+}
+
+#sidebar .icon {
+    min-width: 48px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 6px;
+}
+
+#sidebar .icon-right {
+    margin-left: auto;
+    transition: all .3s ease;
+}
+
+#sidebar .side-menu {
+    margin: 36px 0;
+    padding: 0 20px;
+    transition: all .3s ease;
+}
+
+#sidebar.hide .side-menu {
+    padding: 0 6px;
+}
+
+.side-menu i {
     padding: 0 10px;
 }
+
 #sidebar .side-menu a {
-	display: flex;
-	align-items: center;
-	font-size: 14px;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
     font-weight: 500;
     color: black;
-	padding: 12px 16px 12px 0;
-	transition: all .3s ease;
-	border-radius: 10px;
-	margin: 4px 0;
-	white-space: nowrap;
+    padding: 12px 16px 12px 0;
+    transition: all .3s ease;
+    border-radius: 10px;
+    margin: 4px 0;
+    white-space: nowrap;
 }
-#sidebar .side-menu > li > a:hover {
-	background: #eeeeee;
+
+#sidebar .side-menu>li>a:hover {
+    background: #eeeeee;
 }
-#sidebar .side-menu > li > a.active .icon-right {
-	transform: rotateZ(90deg);
+
+#sidebar .side-menu>li>a.active .icon-right {
+    transform: rotateZ(90deg);
 }
-#sidebar .side-menu > li > a.active,
-#sidebar .side-menu > li > a.active:hover {
-	background: #c62828;
-	color: #fff;
+
+#sidebar .side-menu>li>a.active,
+#sidebar .side-menu>li>a.active:hover {
+    background: #c62828;
+    color: #fff;
 }
+
 /* ===============================
    OMNIMAP SIDEBAR BRAND
 ================================ */
@@ -486,18 +498,20 @@ h1 {
 
 /* CONTENT */
 #content {
-	position: relative;
-	width: calc(100% - 260px);
-	left: 260px;
-	transition: all .3s ease;
+    position: relative;
+    width: calc(100% - 260px);
+    left: 260px;
+    transition: all .3s ease;
 }
-#sidebar.hide + #content {
-	width: calc(100% - 60px);
-	left: 60px;
+
+#sidebar.hide+#content {
+    width: calc(100% - 60px);
+    left: 60px;
 }
+
 nav .toggle-sidebar {
-	font-size: 18px;
-	cursor: pointer;
+    font-size: 18px;
+    cursor: pointer;
 }
 
 /* ===== NAVBAR ===== */
@@ -511,7 +525,7 @@ nav .toggle-sidebar {
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .top-navbar .toggle-sidebar {
@@ -555,10 +569,291 @@ nav .toggle-sidebar {
     font-size: 12px;
     color: #6b7280;
 }
+
 /* NAVBAR */
 
+.omnimap-content-wrapper {
+    padding: 24px;
+    transition: padding 0.3s ease;
+}
 
-/* ===== RESPONSIVE (MOBILE) ===== */
+/* ================ TES OMNI ============ */
+.header-tes-omni {
+    background: linear-gradient(135deg, #CE181B 0%, #7f0000 100%);
+    height: 300px;
+    top: 0px;
+    padding: 20px;
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+    /* display: flex; */
+    align-items: center;
+    justify-content: center;
+}
+
+/* ========== BACKGROUND MOTIF KERTAS ========= */
+.omni-tes-paper-bg {
+    width: 100%;
+    max-width: 800px;
+    background-color: #ffffff;
+
+    background-image: url("../img/paper.png");
+    background-repeat: repeat;
+    background-size: 510px 400px;
+    background-position-x: center;
+    opacity: 1;
+
+    z-index: 10;
+    position: relative;
+    margin: -270px auto;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.omni-tes-paper-bg.no-paper {
+    background: #fff !important;
+    box-shadow: none !important;
+}
+
+/*  CARD CUSTOM */
+.omni-card-info-tes-omni {
+    width: 100%;
+    max-width: 700px;
+    background-color: #eef5ff;
+    border: none;
+    border-left: 5px solid #3b82f6;
+    border-radius: 14px;
+    padding: 0px;
+    margin: 0 auto;
+    font-size: 15px;
+}
+
+.omni-card-warning-tes-omni {
+    width: 100%;
+    max-width: 700px;
+    background-color: #fffbe6;
+    border: none;
+    border-left: 5px solid #facc15;
+    border-radius: 14px;
+    padding: 5px;
+    margin: 0 auto;
+    font-size: 15px;
+}
+
+.test-question {
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+/* ========== BUTTON ========= */
+.btn-tes-omni {
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.btn-start-test {
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    font-size: 13px;
+}
+
+.btn-back-test {
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    font-size: 13px;
+    background: #fff;
+}
+
+/* LIST */
+.omni-card-info-tes-omni ul {
+    padding-left: 18px;
+}
+
+.omni-card-info-tes-omni li {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.tes-answer-btn:hover {
+    background-color: #d32f2f;
+    color: #fff;
+}
+
+/* ACTIVE (dipilih) */
+.tes-answer-btn.active {
+    background-color: #dc2626;
+    border-color: #dc2626;
+    color: #fff;
+}
+
+.tes-answer-btn.active:hover {
+    background-color: #b91c1c;
+    border-color: #b91c1c;
+}
+
+/* MODAL TES OMNI */
+#confirmTestModal img {
+    width: 250px;
+}
+
+/* ============== HASIL TES OMNI =============== */
+.header-hasil-tes-omni {
+    background: linear-gradient(135deg, #CE181B 0%, #7f0000 100%);
+    height: 220px;
+    top: 0px;
+    padding: 20px;
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+    /* display: flex; */
+    align-items: center;
+    justify-content: center;
+}
+
+.hasil-tes-logo {
+    align-items: center;
+    /* gap: 20px; */
+}
+
+.hasil-test-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-top: -110px;
+    padding: 0 40px;
+}
+
+.hasil-test-content h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.hasil-test-content p {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.6;
+}
+
+.hasil-tes-robot {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hasil-tes-robot img {
+    width: 280px;
+}
+
+.card-stats-hasil {
+    background: #fff;
+    border-radius: 14px;
+    padding: 10px 30px;
+    text-align: center;
+    border: rgb(248, 230, 230) 2px solid;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.card-stats-hasil .text-start {
+    margin: auto 10px;
+}
+
+.card-stats-hasil .text-start small {
+    font-weight: 450;
+    color: #979797;
+}
+
+.bg-icon-hasil-tes {
+    width: 60px;
+    height: 60px;
+    background-color: #f9e2e2;
+    padding: 10px;
+    border-radius: 20px;
+    margin: 10px 40px 10px auto;
+}
+
+.bg-icon-hasil-tes img {
+    width: 42px;
+}
+
+.btn-result-export {
+    background-color: #fff;
+    color: #000;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    /* Soft Shadow */
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.btn-result-export i {
+    color: #c62828;
+    font-weight: bold;
+}
+
+.omni-personality-progress-label {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.omni-personality-progress-track {
+    height: 10px;
+    margin-bottom: 10px;
+}
+
+.omni-personality-progress-fill {
+    background-color: #c62828;
+}
+
+.omni-insight-card {
+    width: 100%;
+    background: #CE181B;
+    border: none;
+    border-radius: 14px;
+    padding: 35px 40px;
+    font-size: 15px;
+    color: #fff;
+}
+
+.omni-insight-badge{
+    background: #ffffff88;
+    border-radius: 30px;
+    padding: 5px 20px;
+}
+
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 1600px) {
+    .header-hasil-tes-omni {
+        padding: 30px auto;
+        height: 200px;
+        width: 92%;
+    }
+}
+
+@media (max-width: 1200px) {
+    .header-hasil-tes-omni {
+        padding: 30px auto;
+        height: 200px;
+        max-width: fit-content;
+    }
+}
+
 @media (max-width: 991px) {
     .sidebar {
         position: fixed;
@@ -578,11 +873,14 @@ nav .toggle-sidebar {
     .sidebar.collapsed {
         width: 250px;
     }
+
+    .header-hasil-tes-omni {
+        padding: 30px auto;
+        height: 250px;
+        max-width: fit-content;
+    }
 }
 
-
-
-/* Responsive */
 @media (max-width: 992px) {
     .robot {
         width: 300px;
@@ -590,6 +888,33 @@ nav .toggle-sidebar {
 
     .light-beam {
         width: 450px;
+    }
+}
+
+@media (max-width: 808px) {
+    .hasil-tes-logo h1 {
+        font-size: 32px;
+        padding-top: 10px;
+    }
+
+    .hasil-tes-logo p {
+        font-size: 16px;
+    }
+
+    .card-stats-hasil small {
+        font-size: 14px;
+    }
+
+    .card-stats-hasil h4 {
+        font-size: 18px;
+    }
+
+    .bg-icon-hasil-tes {
+        width: 55px;
+    }
+
+    .bg-icon-hasil-tes img {
+        width: 40px;
     }
 }
 
@@ -615,13 +940,64 @@ nav .toggle-sidebar {
         height: 5px;
     }
 
-    	#content {
-		position: relative;
-		width: calc(100% - 60px);
-		transition: all .3s ease;
-	}
-	nav .nav-link,
-	nav .divider {
-		display: none;
-	}
+    #content {
+        position: relative;
+        width: calc(100% - 60px);
+        transition: all .3s ease;
+    }
+
+    nav .nav-link,
+    nav .divider {
+        display: none;
+    }
+
+    .omni-question-wrapper {
+        padding: 0 24px;
+    }
+
+    .omni-tes-paper-bg {
+        margin-bottom: 5px;
+    }
+
+
+    .progress-timer {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .header-hasil-tes-omni {
+        padding: 30px auto;
+        height: 300px;
+        max-width: fit-content;
+    }
+
+    .hasil-test-content {
+        margin-top: 0px;
+        padding: 0 20px;
+    }
+
+    .hasil-test-content h1 {
+        font-size: 1.8rem;
+    }
+
+    .hasil-test-content p {
+        font-size: 1rem;
+    }
+
+    .hasil-tes-robot img {
+        width: 220px;
+    }
+
+    .stats-hasil-tes-omni {
+        flex-direction: column;
+    }
+
+    .bg-icon-hasil-tes {
+        margin-top: -55px;
+    }
+
+    .card-stats-hasil .text-start {
+        margin-top: 10px;
+    }
+
 }
