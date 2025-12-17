@@ -6,13 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Login</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../css/style.css">
 </head>
 
 <body>
 
     <div class="container header-login">
-        <div class="row logo-header">
+        <div class="row login-logo">
             <div class="col-md-4 left-robot">
                 <img src="../img/robot-2.svg" alt="">
             </div>
@@ -26,11 +27,60 @@
         </div>
     </div>
 
+    <div class="login-area align-items-center mx-auto">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-12 col-lg-12">
+                    <img src="../img/logo.svg" class="img-login">
+                    <form>
+                        <div class="mb-3">
+                            <label for="email" class="form-label"><b>Username</b></label>
+                            <input type="email" class="form-control" id="email" placeholder="Masukkan email Anda">
+                        </div>
+                        <div class="mb-3 password-wrapper">
+                            <label for="password" class="form-label"><b>Password</b></label>
+
+                            <div class="input-icon-wrapper">
+                                <input type="password" class="form-control" id="password"
+                                    placeholder="Masukkan password Anda">
+
+                                <i class="bi bi-eye-slash toggle-password" id="tooglePassword"></i>
+                            </div>
+
+                            <small class="text-danger d-none" id="passwordError">
+                                Password is required
+                            </small>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="rememberme">
+                            <label class="form-check-label" for="rememberme">Remember me</label>
+                        </div>
+                        <button type="submit" class="btn btn-login w-100" id="btn-login">Sign in</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="loginSuccessModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-center p-4">
+                <div class="modal-body">
+                    <img src="../img/login_success.svg" alt="" srcset="">
+                    <h5 class="mt-5 mb-2"><b>🎉 Anda Berhasil Login</b></h5>
+                    <p class="text-muted mb-0">Selamat! anda sudah berhasil login
+                        Nikmati fitur aplikasi OmniMap sekarang juga!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Custom JS (file terpisah) -->
-    <script src="../assets/js/main.js"></script>
+    <script src="../js/script.js"></script>
 </body>
 
 </html>

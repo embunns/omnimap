@@ -6,7 +6,8 @@
     /* box-sizing: border-box; */
 }
 
-body, html {
+body,
+html {
     height: 100%;
     font-family: 'Poppins', sans-serif;
 
@@ -181,7 +182,7 @@ h1 {
     gap: 10px;
     height: 20px;
     width: 100%;
-    margin: 0 ;
+    margin: 0;
     padding: 0 10px;
 }
 
@@ -216,35 +217,129 @@ h1 {
 }
 
 /* Login */
-.header-login{
-    background-color: #CE181B;
+.header-login {
+    background: linear-gradient(135deg, #CE181B 0%, #7f0000 100%);
     height: 350px;
     top: 20px;
     border-radius: 20px;
     position: relative;
     overflow: hidden;
-    display: flex;
+    /* display: flex; */
     align-items: center;
     justify-content: center;
 }
 
-.login-content p{
-    font-size: 1rem;
+.login-logo {
+    /* position: absolute; */
+    margin-top: 40px;
+    justify-content: center;
+    z-index: 20;
+    gap: 0px;
 }
 
-.logo-header{
-    overflow: hidden;
-    margin: 0 50px;
-    top: 100px;
+.login-content {
+    margin-top: 50px;
+    font-size: 1rem;
+    color: #fff;
+    text-align: center;
 }
 
 .right-robot {
     transform: rotateY(180deg);
+    width: 420px;
 }
 
 .right-robot .left-robot {
     position: absolute;
 }
+
+.login-area {
+    width: 700px;
+    padding: 20px;
+    border: 2px solid #e0e0e0;
+    background: #fff;
+    margin-top: -110px;
+    border-radius: 25px;
+    z-index: 10;
+    position: relative;
+}
+
+.img-login {
+    width: 220px;
+    padding: 20px;
+    left: 50%;
+    margin: 0 auto;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+}
+
+.form-check-input[type="checkbox"]:checked {
+    background-color: #b9b9b9;
+    border-color: #e0e0e0;
+}
+
+.form-check-input[type="checkbox"]:focus {
+    border-color: rgb(172, 172, 172);
+    box-shadow: 0 0 0 0.2rem rgba(177, 177, 177, 0.25);
+}
+
+.password-wrapper {
+    position: relative;
+}
+
+.password-wrapper i {
+    position: absolute;
+    top: 75%;
+    right: 12px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #6c757d;
+    font-size: 1.1rem;
+}
+
+.password-wrapper input {
+    padding-right: 40px;
+    /* kasih ruang buat icon */
+}
+
+
+.btn-login {
+    background: #CE181B;
+    border-radius: 15px;
+    padding: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 20px;
+    color: #fff;
+    width: 100%;
+}
+
+.btn-login:hover {
+    background: #e0e0e0;
+    color: #000000;
+}
+
+.form-control.is-invalid+.toggle-password {
+    display: none;
+}
+
+.is-invalid {
+    border-color: #dc3545;
+}
+
+.modal-content {
+    border-radius: 50px;
+}
+
+.modal-body {
+    padding: 30px 70px;
+}
+
+.modal-body img {
+    width: 300px;
+}
+
 
 /* Responsive */
 @media (max-width: 992px) {
