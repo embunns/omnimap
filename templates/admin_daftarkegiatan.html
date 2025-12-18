@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Daftar Kegiatan</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link rel="stylesheet" href="../css/daftarkegiatan.css" />
+  </head>
+  <body>
+    <section id="sidebar">
+      <div class="brand">
+        <a href="mahasiswarentan.html" class="omnimap-brand-link">
+          <img
+            src="../img/logo.svg"
+            class="omnimap-logo-full"
+            alt="OmniMap Logo"
+          />
+        </a>
+        <i class="bi bi-list toggle-sidebar sidebar-hamburger"></i>
+      </div>
+
+      <ul class="side-menu">
+        <li>
+          <a href="mahasiswarentan.html">
+            <img src="../img/mahasiswarentan.svg" class="sidebar-icon" />
+            <span class="text">Mahasiswa Rentan</span>
+          </a>
+        </li>
+
+        <li>
+          <a href="daftarkegiatan.html">
+            <img src="../img/daftarkegiatan.svg" class="sidebar-icon" />
+            <span class="text">Daftar Kegiatan</span>
+          </a>
+        </li>
+
+        <li>
+          <a href="profile.html">
+            <img src="../img/profile.svg" class="sidebar-icon" />
+            <span class="text">Profile</span>
+          </a>
+        </li>
+
+        <li>
+          <a href="login.html">
+            <img src="../img/signout.svg" class="sidebar-icon" />
+            <span class="text">Sign Out</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+
+    <section id="content">
+      <nav class="top-navbar">
+        <i class="bi bi-list toggle-sidebar nav-hamburger"></i>
+
+        <div class="navbar-right">
+          <img src="../img/darkmode.svg" class="nav-icon" alt="Dark Mode" />
+          <img
+            src="../img/notification.svg"
+            class="nav-icon"
+            alt="Notification"
+          />
+
+          <div class="user-info">
+            <img
+              src="https://i.pravatar.cc/40"
+              alt="Profile"
+              class="user-avatar"
+            />
+            <div>
+              <strong>Cyntia Latjuber</strong>
+              <small>Admin Puti</small>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Kategori Kegiatan -->
+      <main>
+        <div class="main-container">
+          
+          <div class="header-section">
+            <h2 class="title">Kategori Kegiatan</h2>
+            <p class="subtitle">Kategori kegiatan rekomendasi bagi mahasiswa (total yang sudah diinputkan)</p>
+          </div>
+
+          <div class="cards-grid">
+            
+            <div class="card" style="background-color: #FFE2E5;">
+              <div class="icon-circle" style="background-color: #FF5B7E;">
+                <img src="../img/icon-ukm.svg" alt="UKM">
+              </div>
+              <div class="card-number">0</div>
+              <div class="card-label">UKM</div>
+            </div>
+
+            <div class="card" style="background-color: #FFF4DE;">
+              <div class="icon-circle" style="background-color: #FF9F6A;">
+                <img src="../img/icon-kepanitiaan.svg" alt="Kepanitiaan">
+              </div>
+              <div class="card-number">0</div>
+              <div class="card-label">Kepanitiaan</div>
+            </div>
+
+            <div class="card" style="background-color: #DCFCE7;">
+              <div class="icon-circle" style="background-color: #4ADE80;">
+                <img src="../img/icon-organisasi.svg" alt="Organisasi">
+              </div>
+              <div class="card-number">0</div>
+              <div class="card-label">Organisasi</div>
+            </div>
+
+            <div class="card" style="background-color: #F3E8FF;">
+              <div class="icon-circle" style="background-color: #C084FC;">
+                <img src="../img/icon-lomba.svg" alt="Lomba">
+              </div>
+              <div class="card-number">0</div>
+              <div class="card-label">Lomba</div>
+            </div>
+
+          </div>
+        </div>
+
+      <!-- Tambah Kegiatan -->
+        <div class="rekomendasi-section">
+          <h2 class="rekomendasi-title">Rekomendasi Kegiatan</h2>
+
+        <button class="btn-tambah-kegiatan" onclick="openModal()">
+          <i class="bi bi-plus-lg"></i>
+          Tambah Kegiatan
+        </button>
+
+        </div>
+
+        <!-- Modal Overlay -->
+        <div class="modal-overlay" id="modalTambahKegiatan">
+
+          <div class="modal-container">
+
+            <!-- Header -->
+        <div class="modal-header">
+          <div class="modal-title">
+            <h2>Tambah Kegiatan</h2>
+            <p>Isi data kegiatan untuk rekomendasi mahasiswa</p>
+          </div>
+
+          <button class="modal-close" onclick="closeModal()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+          <!-- Body (Scrollable) -->
+          <div class="modal-body">
+
+            <div class="form-group">
+              <label>Kategori Kegiatan</label>
+              <select>
+                <option>Pilih kategori...</option>
+                <option>UKM</option>
+                <option>Organisasi</option>
+                <option>Kepanitiaan</option>
+                <option>Lomba</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Nama Kegiatan</label>
+              <input type="text" placeholder="Masukkan nama kegiatan..." />
+            </div>
+
+            <div class="form-group">
+              <label>Deskripsi</label>
+              <textarea placeholder="Deskripsi singkat tentang kegiatan ini..."></textarea>
+            </div>
+
+            <div class="form-group icon-input">
+              <label>Deadline Kegiatan</label>
+              <input type="date" />
+              <i class="bi bi-calendar"></i>
+            </div>
+
+            <div class="form-group">
+              <label>Jumlah Peserta Kegiatan</label>
+              <input type="number" placeholder="Masukkan jumlah peserta kegiatan..." />
+            </div>
+
+            <div class="form-group">
+              <label>Lokasi Kegiatan</label>
+              <input type="text" placeholder="Masukkan lokasi kegiatan..." />
+            </div>
+
+            <div class="form-group multiple-input">
+              <label>Persyaratan Kegiatan</label>
+              <input type="text" placeholder="Masukkan persyaratan kegiatan..." />
+              <button><i class="bi bi-plus-lg"></i></button>
+            </div>
+
+            <div class="form-group multiple-input">
+              <label>Manfaat & Keuntungan</label>
+              <input type="text" placeholder="Masukkan manfaat & keuntungan kegiatan..." />
+              <button><i class="bi bi-plus-lg"></i></button>
+            </div>
+
+            <div class="form-group icon-input">
+              <label>Jadwal Kegiatan</label>
+              <input type="date" />
+              <i class="bi bi-calendar"></i>
+            </div>
+
+            <div class="form-group">
+              <label>Link Pendaftaran</label>
+              <input type="url" placeholder="Masukkan link pendaftaran..." />
+            </div>
+
+            <div class="form-group">
+              <label>Informasi Kontak</label>
+              <textarea placeholder="Masukkan informasi kontak kegiatan..."></textarea>
+            </div>
+
+          </div>
+
+          <!-- Footer -->
+          <div class="modal-footer">
+            <button class="btn-upload">Upload Data</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Search & Filter -->
+      <div class="search-filter-section">
+        <!-- Search Bar -->
+        <div class="search-box">
+          <img src="../img/search.svg" alt="Search" class="search-icon">
+          <input type="text" placeholder="Search here..." />
+        </div>
+
+        <!-- Filter Button -->
+        <div class="filter-buttons">
+          <button class="filter-btn active semua">Semua</button>
+          <button class="filter-btn ukm">UKM</button>
+          <button class="filter-btn organisasi">Organisasi</button>
+          <button class="filter-btn kepanitiaan">Kepanitiaan</button>
+          <button class="filter-btn lomba">Lomba</button>
+        </div>
+      </div>
+
+      <!-- Card Kegiatan -->
+      <div class="kegiatan-card">
+        <div class="kegiatan-header">
+          <div>
+            <h3 class="kegiatan-title">UKM EMBUN</h3>
+            <p class="kegiatan-desc">Ekspresikan kreativitasmu</p>
+          </div>
+
+          <span class="kegiatan-badge">UKM</span>
+        </div>
+
+        <div class="kegiatan-info">
+          <div class="info-item">
+            <img src="../img/calendar.svg" alt="Deadline">
+            <span>Deadline : 31 Desember 2025</span>
+          </div>
+
+          <div class="info-item">
+            <img src="../img/person.svg" alt="Peserta">
+            <span>Peserta 50/100</span>
+          </div>
+
+          <div class="info-item">
+            <img src="../img/location.svg" alt="Lokasi">
+            <span>Telkom University</span>
+          </div>
+        </div>
+      </div>
+
+      </main>
+      <div class="logout-modal" id="logoutModal">
+        <div class="logout-card">
+          <img src="../img/logout.svg" alt="Logout" class="logout-image" />
+
+          <h2>Apakah anda ingin benar-benar logout?</h2>
+
+          <div class="logout-actions">
+            <button class="btn-logout-cancel" id="logoutCancel">Tidak</button>
+            <a href="login.html" class="btn-logout-confirm">Ya</a>
+          </div>
+        </div>
+      </div>
+    <script src="../js/daftarkegiatan.js"></script>
+  </body>
+</html>

@@ -1,0 +1,830 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+body {
+  background-color: #fee8e9;
+  color: #333;
+  overflow-x: hidden;
+}
+a {
+  text-decoration: none;
+}
+ul {
+  list-style: none;
+}
+
+/* =============== SIDEBAR ================== */
+#sidebar {
+  position: fixed;
+  max-width: 260px;
+  width: 100%;
+  background: #fff;
+  top: 0;
+  left: 0;
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: none;
+  transition: all 0.3s ease;
+  z-index: 200;
+}
+#sidebar.hide {
+  max-width: 60px;
+}
+#sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+/* BRAND HEADER */
+#sidebar .brand {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #fff;
+  padding: 0 10px;
+}
+
+/* Logo */
+.omnimap-logo-full {
+  width: 140px;
+  display: block;
+}
+.sidebar-hamburger {
+  font-size: 24px;
+  cursor: pointer;
+  color: #333;
+  display: none;
+}
+
+/* Sidebar collapse (desktop) */
+#sidebar.hide .omnimap-logo-full,
+#sidebar.hide .omnimap-brand-link {
+  display: none;
+}
+#sidebar.hide .sidebar-hamburger {
+  display: block;
+}
+
+/* MENU */
+#sidebar .side-menu {
+  margin: 36px 0;
+  padding: 0 20px;
+}
+#sidebar.hide .side-menu {
+  padding: 0 6px;
+}
+#sidebar .side-menu li {
+  margin-bottom: 5px;
+}
+#sidebar .side-menu a {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: #646464;
+  padding: 12px 16px;
+  border-radius: 10px;
+  transition: 0.3s;
+}
+#sidebar.hide .side-menu a {
+  justify-content: center;
+  padding: 12px 0;
+}
+#sidebar.hide .side-menu a .text {
+  display: none;
+}
+
+.sidebar-icon {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  margin-right: 12px;
+  transition: all 0.3s ease;
+}
+
+#sidebar.hide .sidebar-icon {
+  margin-right: 0;
+}
+
+#sidebar .side-menu a:hover {
+  background: #eeeeee;
+  color: #ce181b;
+}
+#sidebar .side-menu a.active {
+  background: #ce181b;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(206, 24, 27, 0.2);
+}
+#sidebar .side-menu a.active .sidebar-icon {
+  filter: brightness(0) invert(1);
+}
+
+/* =============== CONTENT ================== */
+#content {
+  position: relative;
+  width: calc(100% - 260px);
+  left: 260px;
+  transition: all 0.3s ease;
+}
+#sidebar.hide + #content {
+  width: calc(100% - 60px);
+  left: 60px;
+}
+
+/* =============== NAVBAR ================== */
+.top-navbar {
+  height: 64px;
+  background: #ffffff;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.toggle-sidebar {
+  font-size: 24px;
+  cursor: pointer;
+}
+
+/* ⚠️ rule ini hanya relevan di desktop */
+#sidebar.hide + #content .nav-hamburger {
+  display: none;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-left: auto;
+}
+.nav-icon {
+  width: 22px;
+  cursor: pointer;
+}
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-left: 20px;
+  border-left: 1px solid #eee;
+}
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+/* =============== Kategori Kegiatan =============== */
+/* Style untuk Container Utama Berwarna Putih */
+main {
+  width: 100%;
+  padding: 20px;
+  min-height: calc(100vh - 64px);
+}
+
+.main-container {
+  font-family: "Poppins", sans-serif;
+  background-color: #ffffff; /* Background Putih */
+  border-radius: 20px; /* Sudut melengkung container utama */
+  padding: 32px; /* Jarak isi ke tepi container */
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04); /* Bayangan halus agar terlihat timbul */
+  max-width: 1200px;
+  margin: 20px; /* Posisi tengah halaman */
+  box-sizing: border-box;
+}
+
+/* Header Styling */
+.header-section {
+  margin-bottom: 32px;
+}
+
+.title {
+  color: #05004e;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  color: #8c96a8;
+  font-size: 16px;
+  font-weight: 400;
+  margin: 0;
+}
+
+/* Grid Layout */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+/* Card Styling */
+.card {
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  min-height: 160px; /* Sedikit lebih tinggi agar proporsional */
+  transition: transform 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+/* Lingkaran Icon */
+.icon-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px; /* Jarak antara icon dan angka */
+}
+
+/* Mengatur agar icon svg menjadi putih */
+.icon-circle img {
+  width: 24px;
+  height: 24px;
+  display: block;
+  filter: brightness(0) invert(1);
+}
+
+/* Angka */
+.card-number {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+/* Label (UKM, Lomba, dll) */
+.card-label {
+  font-size: 16px;
+  font-weight: 500;
+  color: #475569;
+}
+
+/* =============== Tambah Kegiatan =============== */
+.rekomendasi-section {
+  margin: 20px;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rekomendasi-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #05004e;
+}
+
+/* Button Tambah Kegiatan */
+.btn-tambah-kegiatan {
+  width: 100%;
+  background-color: #ce181b;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.btn-tambah-kegiatan:hover {
+  background-color: #b31518;
+  transform: translateY(-2px);
+}
+
+.btn-tambah-kegiatan i {
+  font-size: 20px;
+}
+
+/* =============== MODAL TAMBAH KEGIATAN =============== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal-container {
+  background: #ffffff;
+  width: 100%;
+  max-width: 720px;
+  max-height: 90vh;
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Header */
+.modal-header {
+  padding: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  right: 24px;
+  top: 24px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.modal-title {
+  text-align: center;
+}
+
+.modal-header h2 {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.modal-header p {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* Body (SCROLLABLE) */
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Form */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  font-size: 14px;
+}
+
+textarea {
+  resize: none;
+  min-height: 90px;
+}
+
+/* Icon Input */
+.icon-input {
+  position: relative;
+}
+
+.icon-input i {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  color: #6b7280;
+}
+
+/* Multiple Input (+) */
+.multiple-input {
+  position: relative;
+}
+
+.multiple-input button {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  border: none;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+/* HIDE CALENDAR ICON BAWAAN BROWSER */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  cursor: pointer;
+}
+
+input[type="date"] {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+/* Footer */
+.modal-footer {
+  padding: 20px;
+  border-top: 1px solid #eee;
+}
+
+.btn-upload {
+  width: 100%;
+  background: #ce181b;
+  color: #ffffff;
+  border: none;
+  border-radius: 14px;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-upload:hover {
+  background: #b31518;
+}
+
+/* =============== Search & Filter =============== */
+.search-filter-section {
+  margin: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Search Bar */
+.search-box {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+.search-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.search-box input {
+  border: none;
+  outline: none;
+  font-size: 15px;
+  width: 100%;
+  color: #333;
+}
+
+.search-box input::placeholder {
+  color: #9ca3af;
+}
+
+/* Filter Buttons */
+.filter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Base Button */
+.filter-btn {
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  color: #1f2937;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.filter-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+/* Warna Button */
+.filter-btn.semua {
+  background: #f3f4f6;
+}
+
+.filter-btn.ukm {
+  background: #fff4de;
+}
+
+.filter-btn.organisasi {
+  background: #f3e8ff;
+}
+
+.filter-btn.kepanitiaan {
+  background: #e8efff;
+}
+
+.filter-btn.lomba {
+  background: #e8fff8;
+}
+
+/* Active State */
+.filter-btn.active {
+  box-shadow: 0 0 0 2px #ce181b inset;
+  font-weight: 600;
+}
+
+/* =============== Card Kegiatan =============== */
+.kegiatan-card {
+  margin: 20px;
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+}
+
+/* Header */
+.kegiatan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.kegiatan-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.kegiatan-desc {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* Badge */
+.kegiatan-badge {
+  background: #ce181b;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 10px;
+}
+
+/* Info Section */
+.kegiatan-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.info-item img {
+  width: 18px;
+  height: 18px;
+}
+
+/* =============== LOGOUT MODAL ================= */
+.logout-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.logout-modal.active {
+  display: flex;
+}
+
+.logout-card {
+  background: #fff;
+  border-radius: 28px;
+  padding: 40px 32px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  font-family: "Poppins", sans-serif;
+}
+
+.logout-image {
+  width: 120px;
+  margin-bottom: 24px;
+}
+
+.logout-card h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 32px;
+}
+
+.logout-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.btn-logout-cancel {
+  flex: 1;
+  padding: 14px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1.5px solid #ce181b;
+  color: #ce181b;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-logout-confirm {
+  flex: 1;
+  padding: 14px;
+  border-radius: 14px;
+  background: #ce181b;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+}
+
+/* =============== Responsive =============== */
+/* Responsif untuk layar kecil (Tablet/HP) */
+@media (max-width: 768px) {
+  /* ===== RESET DESKTOP COLLAPSE ===== */
+  #sidebar.hide {
+    max-width: 100%;
+  }
+
+  #sidebar.hide .omnimap-logo-full,
+  #sidebar.hide .omnimap-brand-link,
+  #sidebar.hide .side-menu a .text {
+    display: block !important;
+  }
+
+  /* ===== SIDEBAR FULLSCREEN ===== */
+  #sidebar {
+    transform: translateX(-100%);
+    width: 100%;
+    max-width: 100%;
+    z-index: 999;
+  }
+
+  #sidebar.mobile-active {
+    transform: translateX(0);
+  }
+
+  /* ===== SIDEBAR HEADER ===== */
+  #sidebar .brand {
+    justify-content: space-between;
+    padding: 0 20px;
+  }
+
+  /* ===== HAMBURGER FIX ===== */
+  .sidebar-hamburger {
+    display: block !important;
+  }
+
+  .nav-hamburger {
+    display: block !important;
+    margin-right: 16px;
+  }
+
+  /* ===== CONTENT FULL WIDTH ===== */
+  #content {
+    width: 100% !important;
+    left: 0 !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .main-container {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 500px) {
+  .rekomendasi-title {
+    font-size: 18px;
+  }
+
+  .btn-tambah-kegiatan {
+    font-size: 15px;
+    padding: 12px 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .filter-buttons {
+    gap: 10px;
+  }
+
+  .filter-btn {
+    font-size: 13px;
+    padding: 8px 14px;
+  }
+
+  .search-box {
+    padding: 12px 14px;
+  }
+}
+
+@media (max-width: 600px) {
+  .kegiatan-card {
+    padding: 20px;
+  }
+
+  .kegiatan-title {
+    font-size: 18px;
+  }
+
+  .kegiatan-info {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .modal-container {
+    max-width: 95%;
+    border-radius: 18px;
+  }
+
+  .modal-header h2 {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .logout-card {
+    padding: 28px 20px;
+    border-radius: 20px;
+  }
+
+  .logout-card h2 {
+    font-size: 18px;
+  }
+
+  .logout-actions {
+    flex-direction: column;
+  }
+}

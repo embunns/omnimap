@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>OmniMap - Dashboard</title>
+</head>
+
+<body style="background: #fee8e9;">
+
+    {% include 'partials/sidebar.html' %}
+
+    <section id="content">
+        {% include 'partials/navbar.html' %}
+
+        <main class="omnimap-content-wrapper">
+            <div class="btnChatbot">
+                <a href="{{ url_for('chatbot') }}"><img src="{{ url_for('static', filename='img/chatbot.svg') }}" alt=""></a>
+            </div>
+
+            <div class="container mb-4">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="omni-welcome-banner">
+                            <div class="row align-items-center">
+                                <div class="col-lg-7 col-md-6">
+                                    <h1 class="welcome-title">Welcome, {{ user.nama.split()[0] }}!</h1>
+                                    <p class="welcome-description">Temukan insight kepribadianmu dan lihat rekomendasi kegiatan yang paling cocok untukmu.</p>
+                                    <a href="{{ url_for('hasil_tes') }}" class="omni-welcome-btn">
+                                        <i class="bi bi-pencil me-2"></i>
+                                        Pelajari hasil tes & analisis OMNI
+                                    </a>
+                                </div>
+                                <div class="col-lg-5 col-md-6 text-center">
+                                    <img src="{{ url_for('static', filename='img/robot-5.svg') }}" alt="Robot" class="welcome-robot-img">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="container mb-4">
+                <div class="row g-3">
+                    <div class="col-md-4 col-sm-6">
+                        <div class="card-stats-hasil summary-card">
+                            <div class="row align-items-center">
+                                <div class="col-8">
+                                    <small>Skor Rata-rata</small>
+                                    <h4>{{ user.skor_rata_rata if user.skor_rata_rata else '-' }}</h4>
+                                </div>
+                                <div class="col-4 text-end">
+                                    <div class="bg-icon-hasil-tes">
+                                        <i class="bi bi-pencil-fill" style="color: #c62828; font-size: 24px;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-6">
+                        <div class="card-stats-hasil summary-card">
+                            <div class="row align-items-center">
+                                <div class="col-8">
+                                    <small>Status Tes</small>
+                                    <h4>{{ user.status_tes }}</h4>
+                                </div>
+                                <div class="col-4 text-end">
+                                    <div class="bg-icon-hasil-tes">
+                                        <i class="bi bi-folder-fill" style="color: #c62828; font-size: 24px;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-6">
+                        <div class="card-stats-hasil summary-card">
+                            <div class="row align-items-center">
+                                <div class="col-8">
+                                    <small>Rekomendasi</small>
+                                    <h4 id="rekomendasiCount">-</h4>
+                                </div>
+                                <div class="col-4 text-end">
+                                    <div class="bg-icon-hasil-tes">
+                                        <i class="bi bi-search" style="color: #c62828; font-size: 24px;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if user.status_tes == 'Selesai' %}
+            <!-- Show if test completed -->
+            <div class="container mb-4">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card-stats-hasil">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h4 class="fw-bold mb-0">Dimensi Kepribadian</h4>
+                                <a href="{{ url_for('hasil_tes') }}" class="text-danger text-decoration-none fw-bold" style="font-size: 0.9rem;">
+                                    Lihat Detail <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                            <div class="personality-dimensions" id="personalityDimensions"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="container mb-4">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="omni-insight-card">
+                            <div class="d-flex align-items-start">
+                                <i class="bi bi-lightbulb-fill me-3" style="font-size: 2rem; flex-shrink: 0;"></i>
+                                <div>
+                                    <h1 class="fw-bold mb-3" style="color: #fff; font-size: 1.5rem;">Insight Kepribadian</h1>
+                                    <p class="mb-3" style="opacity: 0.95; line-height: 1.6; font-size: 1rem;" id="insightText"></p>
+                                    <div class="mt-3" id="insightBadges"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-7 col-md-12 mb-4">
+                        <div class="card-stats-hasil">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h4 class="fw-bold mb-0">Rekomendasi Kegiatan</h4>
+                                <a href="{{ url_for('rekomendasi_kegiatan') }}" class="text-danger text-decoration-none fw-bold" style="font-size: 0.9rem;">
+                                    Semua <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                            <div class="activity-recommendations" id="activityRecommendations"></div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-5 col-md-12 mb-4">
+                        <div class="card-stats-hasil">
+                            <div class="d-flex align-items-center mb-4">
+                                <div class="progress-icon-wrapper">
+                                    <i class="bi bi-search"></i>
+                                </div>
+                                <h4 class="fw-bold mb-0">Progress Pengembangan Diri</h4>
+                            </div>
+                            <div class="self-development-progress">
+                                <div class="progress-item">
+                                    <div class="progress-item-label">
+                                        <span>Profil Lengkap</span>
+                                        <span>{{ user.progress_profil }}%</span>
+                                    </div>
+                                    <div class="progress-item-bar">
+                                        <div class="progress-item-fill progress-green" style="width: {{ user.progress_profil }}%"></div>
+                                    </div>
+                                </div>
+                                <div class="progress-item">
+                                    <div class="progress-item-label">
+                                        <span>Tes OMNI Selesai</span>
+                                        <span>{{ user.progress_tes }}%</span>
+                                    </div>
+                                    <div class="progress-item-bar">
+                                        <div class="progress-item-fill progress-blue" style="width: {{ user.progress_tes }}%"></div>
+                                    </div>
+                                </div>
+                                <div class="progress-item">
+                                    <div class="progress-item-label">
+                                        <span>Eksplorasi Kegiatan</span>
+                                        <span>{{ user.progress_eksplorasi }}%</span>
+                                    </div>
+                                    <div class="progress-item-bar">
+                                        <div class="progress-item-fill progress-yellow" style="width: {{ user.progress_eksplorasi }}%"></div>
+                                    </div>
+                                </div>
+                                <div class="progress-item">
+                                    <div class="progress-item-label">
+                                        <span>Bergabung dengan Kegiatan</span>
+                                        <span>{{ user.progress_kegiatan }}%</span>
+                                    </div>
+                                    <div class="progress-item-bar">
+                                        <div class="progress-item-fill progress-gray" style="width: {{ user.progress_kegiatan }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="container mb-4">
+                <div class="row">
+                    <div class="col-lg-6 col-md-12 mb-4">
+                        <div class="card-stats-hasil">
+                            <h4 class="fw-bold mb-4">Kategori Kegiatan</h4>
+                            <div class="chart-container-wrapper">
+                                <canvas id="kategoriKegiatanChart"></canvas>
+                            </div>
+                            <div class="chart-legend mt-3" id="chartLegend"></div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6 col-md-12 mb-4">
+                        <div class="card-stats-hasil position-relative">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-emoji-smile-fill me-2" style="color: #c62828; font-size: 24px;"></i>
+                                <h4 class="fw-bold mb-0">Skor Rata-rata</h4>
+                            </div>
+                            <div class="gauge-chart-container">
+                                <canvas id="skorRataRataGauge"></canvas>
+                                <div class="gauge-text-overlay">
+                                    <p class="gauge-label">Skor Rata-rata kamu adalah</p>
+                                    <h2 class="gauge-value">{{ user.skor_rata_rata }}</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% else %}
+            <!-- Show if test NOT completed -->
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+                        <div class="card-stats-hasil text-center" style="padding: 60px 40px; background: linear-gradient(135deg, #fff 0%, #fef5f5 100%); border: 2px dashed #c62828;">
+                            <i class="bi bi-clipboard-x" style="font-size: 5rem; color: #c62828; opacity: 0.3; margin-bottom: 20px;"></i>
+                            <h3 style="color: #c62828; font-weight: 700; margin-bottom: 16px;">Silakan Lakukan Tes OMNI Terlebih Dahulu!</h3>
+                            <p style="color: #666; font-size: 1.1rem; margin-bottom: 30px;">
+                                Untuk mendapatkan rekomendasi kegiatan yang sesuai dengan kepribadianmu, kamu perlu menyelesaikan tes OMNI terlebih dahulu.
+                            </p>
+                            <a href="{{ url_for('tes_omni') }}" class="btn btn-danger" style="padding: 12px 40px; font-size: 1.1rem; border-radius: 10px; font-weight: 600;">
+                                <i class="bi bi-pencil-square me-2"></i>
+                                Mulai Tes OMNI Sekarang
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </main>
+    </section>
+    {% include 'partials/logout_modal.html' %}
+    <!-- Logout Confirmation Modal -->
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-center p-4" style="border-radius: 20px;">
+                <div class="modal-body">
+                    <div style="width: 100px; height: 100px; background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                        <i class="bi bi-box-arrow-right" style="font-size: 3rem; color: #c62828;"></i>
+                    </div>
+                    <h5 class="mt-3 mb-2"><b>Apakah anda ingin benar-benar logout?</b></h5>
+                    <p class="text-muted mb-4">Anda akan keluar dari sesi ini</p>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="border-radius: 10px; padding: 10px 30px; font-weight: 600;">Tidak</button>
+                        <button type="button" class="btn btn-danger" id="confirmLogout" style="border-radius: 10px; padding: 10px 30px; font-weight: 600;">Ya</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const userData = {
+            skor_rata_rata: {{ user.skor_rata_rata if user.skor_rata_rata else 0 }},
+            status_tes: '{{ user.status_tes }}',
+            extraversion_t: {{ user.extraversion_t if user.extraversion_t else 0 }},
+            agreeableness_t: {{ user.agreeableness_t if user.agreeableness_t else 0 }},
+            conscientiousness_t: {{ user.conscientiousness_t if user.conscientiousness_t else 0 }},
+            neuroticism_t: {{ user.neuroticism_t if user.neuroticism_t else 0 }},
+            openness_t: {{ user.openness_t if user.openness_t else 0 }}
+        };
+
+        // Logout handler
+        document.getElementById('logoutBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            const modal = new bootstrap.Modal(document.getElementById('logoutModal'));
+            modal.show();
+        });
+
+        document.getElementById('confirmLogout').addEventListener('click', async () => {
+            const res = await fetch('/api/logout', { method: 'POST' });
+            if (res.ok) window.location.href = '/login';
+        });
+
+        // Sidebar toggle
+        document.querySelector('.toggle-sidebar').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('hide');
+        });
+
+        async function loadActivities() {
+            try {
+                const res = await fetch('/api/activities');
+                const data = await res.json();
+                
+                const activities = data.length > 0 ? data : [
+                    { nama: 'UKM EMBUN', kategori: 'UKM', tingkat_kesulitan: 'Sedang', peserta: '45/80', deadline: '31 Januari 2026', lokasi: 'Telkom University', match_percentage: 85 },
+                    { nama: 'Lomba Debat Nasional', kategori: 'Lomba', tingkat_kesulitan: 'Tinggi', peserta: '50/100', deadline: '31 Desember 2025', lokasi: 'Telkom University', match_percentage: 78 }
+                ];
+                
+                document.getElementById('rekomendasiCount').textContent = activities.length;
+                
+                if (userData.status_tes === 'Selesai') {
+                    document.getElementById('activityRecommendations').innerHTML = activities.slice(0, 2).map(a => `
+                        <div class="activity-recommendation-card">
+                            <div class="activity-card-header">
+                                <div class="activity-title-section">
+                                    <h5 class="activity-title-text">${a.nama}</h5>
+                                    <p class="activity-description-text">${a.kategori}</p>
+                                </div>
+                                <div class="activity-badges-section">
+                                    <span class="activity-tag activity-tag-red">${a.tingkat_kesulitan}</span>
+                                    <span class="activity-tag activity-tag-green">${a.match_percentage}% match</span>
+                                </div>
+                            </div>
+                            <div class="activity-meta-info">
+                                <div class="activity-meta-item">
+                                    <i class="bi bi-calendar3"></i>
+                                    <span>Deadline: ${a.deadline}</span>
+                                </div>
+                                <div class="activity-meta-item">
+                                    <i class="bi bi-people"></i>
+                                    <span>Peserta ${a.peserta}</span>
+                                </div>
+                                <div class="activity-meta-item">
+                                    <i class="bi bi-geo-alt"></i>
+                                    <span>${a.lokasi}</span>
+                                </div>
+                            </div>
+                            <div class="activity-progress-bar">
+                                <div class="progress activity-progress-track">
+                                    <div class="progress-bar activity-progress-fill" style="width: ${a.match_percentage}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    // Display kategori chart
+                    const kategoriCount = {};
+                    activities.forEach(a => {
+                        kategoriCount[a.kategori] = (kategoriCount[a.kategori] || 0) + 1;
+                    });
+
+                    const ctx = document.getElementById('kategoriKegiatanChart');
+                    if (ctx) {
+                        new Chart(ctx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: Object.keys(kategoriCount),
+                                datasets: [{
+                                    data: Object.values(kategoriCount),
+                                    backgroundColor: ['#e91e63', '#64b5f6', '#ff9800', '#4caf50']
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: true,
+                                plugins: { legend: { display: false } }
+                            }
+                        });
+
+                        const total = activities.length;
+                        document.getElementById('chartLegend').innerHTML = Object.entries(kategoriCount).map(([k, v]) => `
+                            <div class="legend-item">
+                                <span class="legend-dot" style="background: ${k === 'Lomba' ? '#e91e63' : k === 'UKM' ? '#64b5f6' : '#ff9800'};"></span>
+                                <span>${k} (${Math.round(v/total*100)}%)</span>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading activities:', error);
+            }
+        }
+
+        if (userData.status_tes === 'Selesai') {
+            const dimensions = [
+                { name: 'Extraversion', value: userData.extraversion_t },
+                { name: 'Agreeableness', value: userData.agreeableness_t },
+                { name: 'Conscientiousness', value: userData.conscientiousness_t },
+                { name: 'Neuroticism', value: userData.neuroticism_t },
+                { name: 'Openness', value: userData.openness_t }
+            ];
+
+            document.getElementById('personalityDimensions').innerHTML = dimensions.map(d => `
+                <div class="omni-personality-progress-item">
+                    <div class="omni-personality-progress-row">
+                        <span class="omni-personality-label">${d.name}</span>
+                        <div class="omni-personality-progress-wrapper">
+                            <div class="progress omni-personality-progress-track">
+                                <div class="progress-bar omni-personality-progress-fill" style="width: ${d.value}%"></div>
+                            </div>
+                        </div>
+                        <span class="omni-personality-score">${Math.round(d.value)}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            const highTraits = dimensions.filter(d => d.value >= 60).map(d => d.name);
+            document.getElementById('insightText').innerHTML = `Berdasarkan hasil tes OMNI kamu, kamu memiliki tingkat <strong>${highTraits.slice(0, 2).join('</strong> dan <strong>')}</strong> yang tinggi. Ini menunjukkan bahwa kamu adalah pribadi yang ${highTraits.length > 0 ? 'antusias dan bertanggung jawab' : 'seimbang'}!`;
+            
+            document.getElementById('insightBadges').innerHTML = highTraits.slice(0, 3).map(t => 
+                `<span class="omni-insight-badge">${t}</span>`
+            ).join('');
+
+            const gaugeCtx = document.getElementById('skorRataRataGauge');
+            if (gaugeCtx) {
+                new Chart(gaugeCtx, {
+                    type: 'doughnut',
+                    data: {
+                        datasets: [{
+                            data: [userData.skor_rata_rata, 100 - userData.skor_rata_rata],
+                            backgroundColor: ['#64b5f6', '#f5f5f5'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        cutout: '75%',
+                        plugins: { legend: { display: false }, tooltip: { enabled: false } }
+                    }
+                });
+            }
+
+            loadActivities();
+        } else {
+            // Still load count for non-completed users
+            loadActivities();
+        }
+    </script>
+</body>
+
+</html>
