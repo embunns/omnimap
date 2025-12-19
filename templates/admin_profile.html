@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}" />
+  </head>
+  <body>
+        <section id="sidebar">
+      <div class="brand">
+        <a href="{{ url_for('mahasiswa_rentan') }}" class="omnimap-brand-link">
+          <img
+            src="{{ url_for('static', filename='img/logo.svg') }}"
+            class="omnimap-logo-full"
+            alt="OmniMap Logo"
+          />
+        </a>
+        <i class="bi bi-list toggle-sidebar sidebar-hamburger"></i>
+      </div>
+
+      <ul class="side-menu">
+        <li>
+          <a href="{{ url_for('mahasiswa_rentan') }}" {% if active_page == 'mahasiswa_rentan' %}class="active"{% endif %}>
+            <img src="{{ url_for('static', filename='img/mahasiswarentan.svg') }}" class="sidebar-icon" />
+            <span class="text">Mahasiswa Rentan</span>
+          </a>
+        </li>
+
+        <li>
+          <a href="{{ url_for('admin_daftar_kegiatan') }}" {% if active_page == 'daftar_kegiatan' %}class="active"{% endif %}>
+            <img src="{{ url_for('static', filename='img/daftarkegiatan.svg') }}" class="sidebar-icon" />
+            <span class="text">Daftar Kegiatan</span>
+          </a>
+        </li>
+
+        <li>
+          <a href="{{ url_for('admin_profile') }}" {% if active_page == 'profile' %}class="active"{% endif %}>
+            <img src="{{ url_for('static', filename='img/profile.svg') }}" class="sidebar-icon" />
+            <span class="text">Profile</span>
+          </a>
+        </li>
+
+        <li>
+          <a href="#" id="signOutBtn">
+            <img src="{{ url_for('static', filename='img/signout.svg') }}" class="sidebar-icon" />
+            <span class="text">Sign Out</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+
+    <section id="content">
+      <nav class="top-navbar">
+        <i class="bi bi-list toggle-sidebar nav-hamburger"></i>
+
+        <div class="navbar-right">
+          <img src="{{ url_for('static', filename='img/darkmode.svg') }}" class="nav-icon" alt="Dark Mode" />
+          <img
+            src="{{ url_for('static', filename='img/notification.svg') }}"
+            class="nav-icon"
+            alt="Notification"
+          />
+
+          <div class="user-info">
+            <img
+              src="{{ user.profile_picture or 'https://i.pravatar.cc/40' }}"
+              alt="Profile"
+              class="user-avatar"
+            />
+            <div>
+              <strong>{{ user.nama }}</strong>
+              <small>{{ user.username }}</small>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <main>
+        <div class="profile-container">
+          <div class="profile-card">
+
+            <!-- Avatar -->
+            <div class="profile-avatar">
+              <div class="avatar-circle"></div>
+              <button class="avatar-edit">
+                <img src="{{ url_for('static', filename='img/pensil.svg') }}" alt="Edit" />
+              </button>
+            </div>
+
+            <!-- Form Profile -->
+            <form class="profile-form">
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Your Name</label>
+                  <input type="text"/>
+                </div>
+
+                <div class="form-group">
+                  <label>User Name</label>
+                  <input type="text"/>
+                </div>
+
+                <div class="form-group">
+                  <label>Email</label>
+                  <input type="email"/>
+                </div>
+
+                <div class="form-group">
+                  <label>Password</label>
+                  <input type="password"/>
+                </div>
+
+                <div class="form-group">
+                  <label>Date of Birth</label>
+                  <input type="date"/>
+                </div>
+
+                <div class="form-group">
+                  <label>Present Address</label>
+                  <input type="text"/>
+                </div>
+
+                <div class="form-group">
+                  <label>Permanent Address</label>
+                  <input type="text"/>
+                </div>
+
+                <div class="form-group">
+                  <label>City</label>
+                  <input type="text"/>
+                </div>
+
+                <div class="form-group">
+                  <label>Postal Code</label>
+                  <input type="text"/>
+                </div>
+
+                <div class="form-group">
+                  <label>Country</label>
+                  <input type="text"/>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn-save primary-red">Save</button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      </main>
+      <!-- LOGOUT MODAL -->
+      <div class="logout-modal" id="logoutModal">
+        <div class="logout-card">
+          <img src="{{ url_for('static', filename='img/logout.svg') }}" alt="Logout" class="logout-image" />
+
+          <h2>Apakah anda ingin benar-benar logout?</h2>
+
+          <div class="logout-actions">
+            <button class="btn-logout-cancel" id="logoutCancel">Tidak</button>
+            <a href="{{ url_for('login') }}" class="btn-logout-confirm">Ya</a>
+          </div>
+        </div>
+      </div>
+      <script src="{{ url_for('static', filename='js/profile.js') }}"></script>
+    </section>
+  </body>
+</html>

@@ -1,0 +1,18 @@
+<nav class="top-navbar">
+    <i class='bi bi-list toggle-sidebar'></i>
+    <div class="navbar-right">
+        <i class="bi bi-moon"></i>
+        <i class="bi bi-bell"></i>
+        <div class="user-info">
+            {% if user.profile_picture %}
+            <img src="{{ user.profile_picture }}" alt="Profile">
+            {% else %}
+            <img src="https://i.pravatar.cc/40" alt="Profile">
+            {% endif %}
+            <div>
+                <strong>{{ user.nama }}</strong>
+                <small>Mahasiswa</small>
+            </div>
+        </div>
+    </div>
+</nav>
