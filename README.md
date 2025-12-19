@@ -165,8 +165,8 @@ After running `seed_data.py`, you can use these accounts:
 
 | Role | Username | Password |
 |------|----------|----------|
-| Admin | admin | admin123 |
-| User | user1 | password123 |
+| Admin | puti | admin123 |
+| User | putrikusuma | mahasiswa123 |
 
 ## 🤝 Contributing
 
