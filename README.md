@@ -54,7 +54,7 @@ OmniMap is a web-based personality assessment and activity recommendation system
    python -m venv venv
    
    # Windows
-   venv\Scripts\activate
+   venv\Scripts\activate.bat
    
    # macOS/Linux
    source venv/bin/activate
