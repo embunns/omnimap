@@ -397,32 +397,6 @@ Omnimap-main/
 
 ---
 
-🔄 System Workflow
-When a Student Takes the Test:
-┌─────────────┐
-│ User Login  │
-└──────┬──────┘
-       │
-       ▼
-┌──────────────────┐
-│ Start OMNI Test  │
-└──────┬───────────┘
-       │
-       ▼
-┌────────────────────────
-
-### **Model Efficiency Metrics:**
-
-| Operation | Time | Details |
-|-----------|------|---------|
-| **Model Loading** | 1-2 seconds | Once at server startup |
-| **Prediction** | <100ms | Per student test |
-| **Recommendation** | <50ms | Per dashboard load |
-| **Re-training** | Manual only | Not automatic |
-
-> **⚡ Performance**: Models are loaded **once** when the server starts and cached in memory for instant predictions!
-
----
 
 ## 🆘 Troubleshooting Guide
 
