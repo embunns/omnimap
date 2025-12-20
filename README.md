@@ -632,20 +632,12 @@ If you encounter any issues or have questions:
 2. Open an issue on GitHub
 3. Contact the development team
 
----
-
-## 🔖 Version Information
-
-| Version | Release Date | Changes |
-|---------|--------------|---------|
-| **2.0** | December 2024 | PostgreSQL + ML Models |
-| **1.0** | November 2024 | Initial Release |
 
 ---
 
 <div align="center">
 
-**Made with ❤️ by Computing Project Team**
+**Made with ❤️ by Computing Project Team 2**
 
 **Telkom University**
 
