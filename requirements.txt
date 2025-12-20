@@ -32,6 +32,10 @@ openpyxl==3.1.2          # Untuk read Excel files
 xlrd==2.0.1              # Untuk Excel support
 python-dateutil==2.8.2
 
+# ==================== PDF GENERATION ====================
+reportlab==4.0.7         # Untuk generate PDF
+matplotlib==3.8.2        # Untuk charts di PDF
+
 # ==================== GOOGLE GEMINI API ====================
 google-generativeai==0.3.2
 

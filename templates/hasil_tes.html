@@ -90,7 +90,7 @@
                         <div class="card-stats-hasil p-5 mb-4 text-start">
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <h4 class="fw-900 mb-0">Dimensi Kepribadian</h4>
-                                <a href="#" class="text-danger text-decoration-none fw-bold" style="font-size: 0.9rem;">
+                                <a href="/detail-hasil-tes" class="text-danger text-decoration-none fw-bold" style="font-size: 0.9rem;">
                                     Lihat Detail <i class="bi bi-arrow-right"></i>
                                 </a>
                             </div>
@@ -252,7 +252,21 @@
             neuroticism_t: {{ user.neuroticism_t|default(0) }},
             openness_t: {{ user.openness_t|default(0) }}
         };
-
+        // Export functionality
+        document.getElementById('btnExportOmniResult')?.addEventListener('click', function() {
+            // Show loading
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Mengunduh...';
+            
+            // Download PDF
+            window.location.href = '/api/export-hasil-tes';
+            
+            // Reset button after delay
+            setTimeout(() => {
+                this.disabled = false;
+                this.innerHTML = 'Unduh Hasil Tes OMNI <i class="bi bi-download"></i>';
+            }, 2000);
+        });
         // Bar Chart - Domain Scores
         const barCtx = document.getElementById('omniUniqueBarChart');
         if (barCtx) {
@@ -408,11 +422,6 @@
                 });
         }
 
-        // Export functionality
-        document.getElementById('btnExportOmniResult')?.addEventListener('click', function() {
-            // Implement export to PDF functionality here
-            alert('Fitur export akan segera tersedia!');
-        });
     </script>
 </body>
 

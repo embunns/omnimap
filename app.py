@@ -6,6 +6,18 @@ import os
 import json
 from datetime import timedelta
 
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.units import cm
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
+from reportlab.pdfgen import canvas
+from io import BytesIO
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg') 
+
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'your-secret-key-change-this'
@@ -15,6 +27,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 # Di terminal Python atau dalam app.py
 
+# Tambahkan setelah inisialisasi app
+@app.template_filter('zfill')
+def zfill_filter(value, width=2):
+    """Add leading zeros to number"""
+    return str(value).zfill(width)
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -696,8 +713,336 @@ def hasil_tes():
     
     return render_template('hasil_tes.html', user=user_dict, active_page='hasil_tes')
 
-# Tambahkan routes ini ke app.py
-
+@app.route('/api/export-hasil-tes', methods=['GET'])
+def api_export_hasil_tes():
+    """Export hasil tes to PDF with all parameters"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        user = User.query.get(session['user_id'])
+        
+        if not user or user.status_tes != 'Selesai':
+            return jsonify({'error': 'Tes belum selesai'}), 400
+        
+        # Create PDF in memory
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, 
+                              rightMargin=2*cm, leftMargin=2*cm,
+                              topMargin=2*cm, bottomMargin=2*cm)
+        
+        # Container for PDF elements
+        elements = []
+        
+        # Styles
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            textColor=colors.HexColor('#c62828'),
+            spaceAfter=30,
+            alignment=TA_CENTER,
+            fontName='Helvetica-Bold'
+        )
+        
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=16,
+            textColor=colors.HexColor('#c62828'),
+            spaceAfter=12,
+            spaceBefore=12,
+            fontName='Helvetica-Bold'
+        )
+        
+        subheading_style = ParagraphStyle(
+            'CustomSubHeading',
+            parent=styles['Heading3'],
+            fontSize=14,
+            textColor=colors.HexColor('#333333'),
+            spaceAfter=10,
+            spaceBefore=10,
+            fontName='Helvetica-Bold'
+        )
+        
+        normal_style = ParagraphStyle(
+            'CustomNormal',
+            parent=styles['Normal'],
+            fontSize=10,
+            spaceAfter=12
+        )
+        
+        # Title
+        elements.append(Paragraph("HASIL TES OMNI", title_style))
+        elements.append(Paragraph("Omni Multidimensional Personality Inventory", normal_style))
+        elements.append(Spacer(1, 0.5*cm))
+        
+        # User Info
+        elements.append(Paragraph("Informasi Peserta", heading_style))
+        user_info_data = [
+            ['Nama', f': {user.nama}'],
+            ['NIM', f': {user.nim}'],
+            ['Email', f': {user.email}'],
+            ['Fakultas', f': {user.fakultas or "N/A"}'],
+            ['Tanggal Tes', f': {user.created_at.strftime("%d %B %Y") if user.created_at else "N/A"}'],
+            ['Skor Rata-rata', f': {round(user.skor_rata_rata, 1) if user.skor_rata_rata else "N/A"}']
+        ]
+        
+        user_info_table = Table(user_info_data, colWidths=[4*cm, 13*cm])
+        user_info_table.setStyle(TableStyle([
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#666666')),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+        elements.append(user_info_table)
+        elements.append(Spacer(1, 0.8*cm))
+        
+        # =========================
+        # 25 FACETS
+        # =========================
+        elements.append(Paragraph("25 FACETS (Dimensi Kepribadian)", heading_style))
+        elements.append(Spacer(1, 0.3*cm))
+        
+        facets_data = [
+            ['No', 'Konstruk', 'Raw', 'T-Score', 'Kategori'],
+            ['01', 'Aestheticism', user.aestheticism_raw or 0, round(user.aestheticism_t, 1) if user.aestheticism_t else 0, user.aestheticism_kategori or 'N/A'],
+            ['02', 'Ambition', user.ambition_raw or 0, round(user.ambition_t, 1) if user.ambition_t else 0, user.ambition_kategori or 'N/A'],
+            ['03', 'Anxiety', user.anxiety_raw or 0, round(user.anxiety_t, 1) if user.anxiety_t else 0, user.anxiety_kategori or 'N/A'],
+            ['04', 'Assertiveness', user.assertiveness_raw or 0, round(user.assertiveness_t, 1) if user.assertiveness_t else 0, user.assertiveness_kategori or 'N/A'],
+            ['05', 'Conventionality', user.conventionality_raw or 0, round(user.conventionality_t, 1) if user.conventionality_t else 0, user.conventionality_kategori or 'N/A'],
+            ['06', 'Depression', user.depression_raw or 0, round(user.depression_t, 1) if user.depression_t else 0, user.depression_kategori or 'N/A'],
+            ['07', 'Dutifulness', user.dutifulness_raw or 0, round(user.dutifulness_t, 1) if user.dutifulness_t else 0, user.dutifulness_kategori or 'N/A'],
+            ['08', 'Energy', user.energy_raw or 0, round(user.energy_t, 1) if user.energy_t else 0, user.energy_kategori or 'N/A'],
+            ['09', 'Excitement', user.excitement_raw or 0, round(user.excitement_t, 1) if user.excitement_t else 0, user.excitement_kategori or 'N/A'],
+            ['10', 'Exhibitionism', user.exhibitionism_raw or 0, round(user.exhibitionism_t, 1) if user.exhibitionism_t else 0, user.exhibitionism_kategori or 'N/A'],
+            ['11', 'Flexibility', user.flexibility_raw or 0, round(user.flexibility_t, 1) if user.flexibility_t else 0, user.flexibility_kategori or 'N/A'],
+            ['12', 'Hostility', user.hostility_raw or 0, round(user.hostility_t, 1) if user.hostility_t else 0, user.hostility_kategori or 'N/A'],
+            ['13', 'Impulsiveness', user.impulsiveness_raw or 0, round(user.impulsiveness_t, 1) if user.impulsiveness_t else 0, user.impulsiveness_kategori or 'N/A'],
+            ['14', 'Intellect', user.intellect_raw or 0, round(user.intellect_t, 1) if user.intellect_t else 0, user.intellect_kategori or 'N/A'],
+            ['15', 'Irritability', user.irritability_raw or 0, round(user.irritability_t, 1) if user.irritability_t else 0, user.irritability_kategori or 'N/A'],
+            ['16', 'Modesty', user.modesty_raw or 0, round(user.modesty_t, 1) if user.modesty_t else 0, user.modesty_kategori or 'N/A'],
+            ['17', 'Moodiness', user.moodiness_raw or 0, round(user.moodiness_t, 1) if user.moodiness_t else 0, user.moodiness_kategori or 'N/A'],
+            ['18', 'Orderliness', user.orderliness_raw or 0, round(user.orderliness_t, 1) if user.orderliness_t else 0, user.orderliness_kategori or 'N/A'],
+            ['19', 'Self Indulgence', user.self_indulgence_raw or 0, round(user.self_indulgence_t, 1) if user.self_indulgence_t else 0, user.self_indulgence_kategori or 'N/A'],
+            ['20', 'Self Reliance', user.self_reliance_raw or 0, round(user.self_reliance_t, 1) if user.self_reliance_t else 0, user.self_reliance_kategori or 'N/A'],
+            ['21', 'Sincerity', user.sincerity_raw or 0, round(user.sincerity_t, 1) if user.sincerity_t else 0, user.sincerity_kategori or 'N/A'],
+            ['22', 'Sociability', user.sociability_raw or 0, round(user.sociability_t, 1) if user.sociability_t else 0, user.sociability_kategori or 'N/A'],
+            ['23', 'Tolerance', user.tolerance_raw or 0, round(user.tolerance_t, 1) if user.tolerance_t else 0, user.tolerance_kategori or 'N/A'],
+            ['24', 'Trustfulness', user.trustfulness_raw or 0, round(user.trustfulness_t, 1) if user.trustfulness_t else 0, user.trustfulness_kategori or 'N/A'],
+            ['25', 'Warmth', user.warmth_raw or 0, round(user.warmth_t, 1) if user.warmth_t else 0, user.warmth_kategori or 'N/A'],
+        ]
+        
+        facets_table = Table(facets_data, colWidths=[1.5*cm, 6*cm, 2*cm, 2.5*cm, 3*cm])
+        facets_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#c62828')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+            ('TOPPADDING', (0, 0), (-1, 0), 10),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f5f5')]),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 1), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+        ]))
+        elements.append(facets_table)
+        elements.append(PageBreak())
+        
+        # =========================
+        # 5 BIG DOMAINS
+        # =========================
+        elements.append(Paragraph("5 BIG DOMAINS (Domain Utama)", heading_style))
+        elements.append(Paragraph("Lima domain utama kepribadian berdasarkan teori Big Five", normal_style))
+        elements.append(Spacer(1, 0.3*cm))
+        
+        domains_data = [
+            ['No', 'Konstruk', 'Raw Score', 'T-Score', 'Kategori'],
+            ['01', 'Extraversion', user.extraversion_raw or 0, round(user.extraversion_t, 1) if user.extraversion_t else 0, user.extraversion_kategori or 'N/A'],
+            ['02', 'Agreeableness', user.agreeableness_raw or 0, round(user.agreeableness_t, 1) if user.agreeableness_t else 0, user.agreeableness_kategori or 'N/A'],
+            ['03', 'Conscientiousness', user.conscientiousness_raw or 0, round(user.conscientiousness_t, 1) if user.conscientiousness_t else 0, user.conscientiousness_kategori or 'N/A'],
+            ['04', 'Neuroticism', user.neuroticism_raw or 0, round(user.neuroticism_t, 1) if user.neuroticism_t else 0, user.neuroticism_kategori or 'N/A'],
+            ['05', 'Openness', user.openness_raw or 0, round(user.openness_t, 1) if user.openness_t else 0, user.openness_kategori or 'N/A'],
+        ]
+        
+        domains_table = Table(domains_data, colWidths=[1.5*cm, 6*cm, 2.5*cm, 2.5*cm, 3*cm])
+        domains_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#c62828')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+            ('TOPPADDING', (0, 0), (-1, 0), 10),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f5f5')]),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 1), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
+        ]))
+        elements.append(domains_table)
+        elements.append(Spacer(1, 1*cm))
+        
+        # =========================
+        # ADDITIONAL CONSTRUCTS
+        # =========================
+        elements.append(Paragraph("ADDITIONAL CONSTRUCTS", heading_style))
+        elements.append(Paragraph("Konstruk tambahan yang diukur dalam tes OMNI", normal_style))
+        elements.append(Spacer(1, 0.3*cm))
+        
+        additional_data = [
+            ['No', 'Konstruk', 'Raw Score', 'T-Score', 'Kategori'],
+            ['01', 'Narcissism', user.narcissism_raw or 0, round(user.narcissism_t, 1) if user.narcissism_t else 0, user.narcissism_kategori or 'N/A'],
+            ['02', 'Sensation Seeking', user.sensation_seeking_raw or 0, round(user.sensation_seeking_t, 1) if user.sensation_seeking_t else 0, user.sensation_seeking_kategori or 'N/A'],
+        ]
+        
+        additional_table = Table(additional_data, colWidths=[1.5*cm, 6*cm, 2.5*cm, 2.5*cm, 3*cm])
+        additional_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#c62828')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+            ('TOPPADDING', (0, 0), (-1, 0), 10),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f5f5')]),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 1), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
+        ]))
+        elements.append(additional_table)
+        elements.append(Spacer(1, 1*cm))
+        
+        # =========================
+        # INSIGHT KEPRIBADIAN
+        # =========================
+        elements.append(Paragraph("💡 INSIGHT KEPRIBADIAN", heading_style))
+        
+        high_traits = []
+        if user.excitement_t and user.excitement_t >= 60:
+            high_traits.append('Excitement')
+        if user.dutifulness_t and user.dutifulness_t >= 60:
+            high_traits.append('Dutifulness')
+        if user.assertiveness_t and user.assertiveness_t >= 60:
+            high_traits.append('Assertiveness')
+        if user.aestheticism_t and user.aestheticism_t >= 60:
+            high_traits.append('Aestheticism')
+        
+        if high_traits:
+            insight_text = f"Berdasarkan hasil tes OMNI kamu, kamu memiliki tingkat <b>{', '.join(high_traits)}</b> yang tinggi. "
+        else:
+            insight_text = "Berdasarkan hasil tes OMNI kamu, kamu memiliki profil kepribadian yang seimbang. "
+        
+        insight_text += "Ini menunjukkan karakteristik unik dalam kepribadianmu yang dapat dikembangkan lebih lanjut."
+        
+        elements.append(Paragraph(insight_text, normal_style))
+        
+        # Traits badges
+        trait_badges = []
+        if user.excitement_kategori == 'Tinggi' or user.excitement_kategori == 'Sangat Tinggi' or (user.excitement_t and user.excitement_t >= 60):
+            trait_badges.append('Antusias')
+        if user.dutifulness_kategori == 'Tinggi' or user.dutifulness_kategori == 'Sangat Tinggi' or (user.dutifulness_t and user.dutifulness_t >= 60):
+            trait_badges.append('Bertanggung Jawab')
+        if user.assertiveness_kategori == 'Tinggi' or user.assertiveness_kategori == 'Sangat Tinggi' or (user.assertiveness_t and user.assertiveness_t >= 60):
+            trait_badges.append('Asertif')
+        if user.aestheticism_kategori == 'Tinggi' or user.aestheticism_kategori == 'Sangat Tinggi' or (user.aestheticism_t and user.aestheticism_t >= 60):
+            trait_badges.append('Kreatif')
+        if user.extraversion_kategori == 'Tinggi' or user.extraversion_kategori == 'Sangat Tinggi' or (user.extraversion_t and user.extraversion_t >= 60):
+            trait_badges.append('Ekstrovert')
+        
+        if trait_badges:
+            elements.append(Spacer(1, 0.3*cm))
+            elements.append(Paragraph(f"<b>Karakteristik Utama:</b> {', '.join(trait_badges)}", normal_style))
+        
+        elements.append(Spacer(1, 1*cm))
+        
+        # =========================
+        # PANDUAN INTERPRETASI
+        # =========================
+        elements.append(Paragraph("PANDUAN INTERPRETASI", heading_style))
+        
+        interpretasi_data = [
+            ['Kategori', 'Range T-Score'],
+            ['Sangat Tinggi', 'T ≥ 65'],
+            ['Tinggi', '55 ≤ T < 65'],
+            ['Sedang', '45 ≤ T < 55'],
+            ['Rendah', '35 ≤ T < 45'],
+            ['Sangat Rendah', 'T < 35'],
+        ]
+        
+        interpretasi_table = Table(interpretasi_data, colWidths=[8*cm, 7*cm])
+        interpretasi_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#c62828')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f5f5')]),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ]))
+        elements.append(interpretasi_table)
+        elements.append(Spacer(1, 0.5*cm))
+        
+        keterangan_text = """
+        <b>Keterangan:</b><br/>
+        • <b>Raw Score:</b> Skor mentah dari jawaban kuesioner<br/>
+        • <b>T-Score:</b> Skor standar dengan mean 50 dan standar deviasi 10<br/>
+        • <b>Kategori:</b> Klasifikasi berdasarkan T-Score untuk interpretasi
+        """
+        elements.append(Paragraph(keterangan_text, normal_style))
+        
+        elements.append(Spacer(1, 1.5*cm))
+        
+        # Footer
+        footer_style = ParagraphStyle(
+            'Footer',
+            parent=styles['Normal'],
+            fontSize=9,
+            textColor=colors.HexColor('#666666'),
+            alignment=TA_CENTER
+        )
+        elements.append(Paragraph("Dokumen ini dibuat secara otomatis oleh sistem OmniMap", footer_style))
+        elements.append(Paragraph(f"Tanggal: {datetime.now().strftime('%d %B %Y, %H:%M')}", footer_style))
+        
+        # Build PDF
+        doc.build(elements)
+        
+        # Get PDF from buffer
+        pdf_data = buffer.getvalue()
+        buffer.close()
+        
+        # Create response
+        from flask import make_response
+        response = make_response(pdf_data)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename=Hasil_Tes_OMNI_{user.nim}_{user.nama.replace(" ", "_")}.pdf'
+        
+        return response
+        
+    except Exception as e:
+        print(f"Error exporting PDF: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': f'Terjadi kesalahan: {str(e)}'
+        }), 500
+    
 @app.route('/rekomendasi-kegiatan')
 def rekomendasi_kegiatan():
     if 'user_id' not in session:
@@ -718,6 +1063,138 @@ def rekomendasi_kegiatan():
     }
     
     return render_template('rekomendasiKegiatan-1.html', user=user_dict, active_page='rekomendasi_kegiatan')
+@app.route('/detail-hasil-tes')
+def detail_hasil_tes():
+    """Display detailed test results with all facets and domains"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    user = User.query.get(session['user_id'])
+    
+    # Check if user has completed the test
+    if user.status_tes != 'Selesai':
+        return redirect(url_for('tes_omni'))
+    
+    # Prepare user data for template
+    user_dict = {
+        'id': user.id,
+        'nim': user.nim,
+        'nama': user.nama,
+        'email': user.email,
+        'fakultas': user.fakultas,
+        'profile_picture': user.profile_picture,
+        'status_tes': user.status_tes,
+        
+        # Raw scores - Facets
+        'aestheticism_raw': user.aestheticism_raw,
+        'ambition_raw': user.ambition_raw,
+        'anxiety_raw': user.anxiety_raw,
+        'assertiveness_raw': user.assertiveness_raw,
+        'conventionality_raw': user.conventionality_raw,
+        'depression_raw': user.depression_raw,
+        'dutifulness_raw': user.dutifulness_raw,
+        'energy_raw': user.energy_raw,
+        'excitement_raw': user.excitement_raw,
+        'exhibitionism_raw': user.exhibitionism_raw,
+        'flexibility_raw': user.flexibility_raw,
+        'hostility_raw': user.hostility_raw,
+        'impulsiveness_raw': user.impulsiveness_raw,
+        'intellect_raw': user.intellect_raw,
+        'irritability_raw': user.irritability_raw,
+        'modesty_raw': user.modesty_raw,
+        'moodiness_raw': user.moodiness_raw,
+        'orderliness_raw': user.orderliness_raw,
+        'self_indulgence_raw': user.self_indulgence_raw,
+        'self_reliance_raw': user.self_reliance_raw,
+        'sincerity_raw': user.sincerity_raw,
+        'sociability_raw': user.sociability_raw,
+        'tolerance_raw': user.tolerance_raw,
+        'trustfulness_raw': user.trustfulness_raw,
+        'warmth_raw': user.warmth_raw,
+        
+        # T-scores - Facets
+        'aestheticism_t': user.aestheticism_t,
+        'ambition_t': user.ambition_t,
+        'anxiety_t': user.anxiety_t,
+        'assertiveness_t': user.assertiveness_t,
+        'conventionality_t': user.conventionality_t,
+        'depression_t': user.depression_t,
+        'dutifulness_t': user.dutifulness_t,
+        'energy_t': user.energy_t,
+        'excitement_t': user.excitement_t,
+        'exhibitionism_t': user.exhibitionism_t,
+        'flexibility_t': user.flexibility_t,
+        'hostility_t': user.hostility_t,
+        'impulsiveness_t': user.impulsiveness_t,
+        'intellect_t': user.intellect_t,
+        'irritability_t': user.irritability_t,
+        'modesty_t': user.modesty_t,
+        'moodiness_t': user.moodiness_t,
+        'orderliness_t': user.orderliness_t,
+        'self_indulgence_t': user.self_indulgence_t,
+        'self_reliance_t': user.self_reliance_t,
+        'sincerity_t': user.sincerity_t,
+        'sociability_t': user.sociability_t,
+        'tolerance_t': user.tolerance_t,
+        'trustfulness_t': user.trustfulness_t,
+        'warmth_t': user.warmth_t,
+        
+        # Categories - Facets
+        'aestheticism_kategori': user.aestheticism_kategori,
+        'ambition_kategori': user.ambition_kategori,
+        'anxiety_kategori': user.anxiety_kategori,
+        'assertiveness_kategori': user.assertiveness_kategori,
+        'conventionality_kategori': user.conventionality_kategori,
+        'depression_kategori': user.depression_kategori,
+        'dutifulness_kategori': user.dutifulness_kategori,
+        'energy_kategori': user.energy_kategori,
+        'excitement_kategori': user.excitement_kategori,
+        'exhibitionism_kategori': user.exhibitionism_kategori,
+        'flexibility_kategori': user.flexibility_kategori,
+        'hostility_kategori': user.hostility_kategori,
+        'impulsiveness_kategori': user.impulsiveness_kategori,
+        'intellect_kategori': user.intellect_kategori,
+        'irritability_kategori': user.irritability_kategori,
+        'modesty_kategori': user.modesty_kategori,
+        'moodiness_kategori': user.moodiness_kategori,
+        'orderliness_kategori': user.orderliness_kategori,
+        'self_indulgence_kategori': user.self_indulgence_kategori,
+        'self_reliance_kategori': user.self_reliance_kategori,
+        'sincerity_kategori': user.sincerity_kategori,
+        'sociability_kategori': user.sociability_kategori,
+        'tolerance_kategori': user.tolerance_kategori,
+        'trustfulness_kategori': user.trustfulness_kategori,
+        'warmth_kategori': user.warmth_kategori,
+        
+        # Raw scores - Domains
+        'extraversion_raw': user.extraversion_raw,
+        'agreeableness_raw': user.agreeableness_raw,
+        'conscientiousness_raw': user.conscientiousness_raw,
+        'neuroticism_raw': user.neuroticism_raw,
+        'openness_raw': user.openness_raw,
+        'narcissism_raw': user.narcissism_raw,
+        'sensation_seeking_raw': user.sensation_seeking_raw,
+        
+        # T-scores - Domains
+        'extraversion_t': user.extraversion_t,
+        'agreeableness_t': user.agreeableness_t,
+        'conscientiousness_t': user.conscientiousness_t,
+        'neuroticism_t': user.neuroticism_t,
+        'openness_t': user.openness_t,
+        'narcissism_t': user.narcissism_t,
+        'sensation_seeking_t': user.sensation_seeking_t,
+        
+        # Categories - Domains
+        'extraversion_kategori': user.extraversion_kategori,
+        'agreeableness_kategori': user.agreeableness_kategori,
+        'conscientiousness_kategori': user.conscientiousness_kategori,
+        'neuroticism_kategori': user.neuroticism_kategori,
+        'openness_kategori': user.openness_kategori,
+        'narcissism_kategori': user.narcissism_kategori,
+        'sensation_seeking_kategori': user.sensation_seeking_kategori
+    }
+    
+    return render_template('detail_hasil_tes.html', user=user_dict, active_page='hasil_tes')
 
 @app.route('/api/recommended-activities', methods=['GET'])
 def api_recommended_activities():
