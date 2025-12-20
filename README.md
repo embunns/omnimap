@@ -397,37 +397,19 @@ Omnimap-main/
 
 ---
 
-## 🔄 System Workflow
-
-### **When a Student Takes the Test:**
-
-```mermaid
-graph LR
-    A[User Login] --> B[Start OMNI Test]
-    B --> C[Answer 200 Questions]
-    C --> D[Submit Answers]
-    D --> E{ML Model Available?}
-    E -->|Yes| F[Predict with Neural Network]
-    E -->|No| G[Fallback to Manual Calculation]
-    F --> H[Save Results to PostgreSQL]
-    G --> H
-    H --> I[Display Results & Insights]
-    I --> J[Show T-Scores & Charts]
-```
-
-### **When Viewing Recommendations:**
-
-```mermaid
-graph LR
-    A[User Opens Dashboard] --> B[Load Personality Traits]
-    B --> C{Recommender Available?}
-    C -->|Yes| D[ML-Based Recommendations]
-    C -->|No| E[Manual Matching Algorithm]
-    D --> F[Calculate Match Scores]
-    E --> F
-    F --> G[Display Top Activities]
-    G --> H[Show Match Percentages]
-```
+🔄 System Workflow
+When a Student Takes the Test:
+┌─────────────┐
+│ User Login  │
+└──────┬──────┘
+       │
+       ▼
+┌──────────────────┐
+│ Start OMNI Test  │
+└──────┬───────────┘
+       │
+       ▼
+┌────────────────────────
 
 ### **Model Efficiency Metrics:**
 
