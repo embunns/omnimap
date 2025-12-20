@@ -6,25 +6,31 @@ import os
 import json
 from datetime import timedelta
 
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.lib.units import cm
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, PageBreak
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
-from reportlab.pdfgen import canvas
-from io import BytesIO
-import matplotlib.pyplot as plt
-import matplotlib
-matplotlib.use('Agg') 
+# NEW IMPORTS
+from config import config_by_name
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 
-app.config['SECRET_KEY'] = 'your-secret-key-change-this'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///omnimap.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db = SQLAlchemy(app)
+# REPLACE OLD CONFIG WITH THIS
+env = os.getenv('FLASK_ENV', 'development')
+app.config.from_object(config_by_name[env])
+
+# Try PostgreSQL, fallback to SQLite if failed
+try:
+    db = SQLAlchemy(app)
+    # Test connection
+    with app.app_context():
+        db.engine.connect()
+    print("✅ Connected to PostgreSQL successfully!")
+except Exception as e:
+    print(f"⚠️ PostgreSQL connection failed: {e}")
+    print("🔄 Falling back to SQLite...")
+    app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI_FALLBACK']
+    db = SQLAlchemy(app)
 # Di terminal Python atau dalam app.py
 
 # Tambahkan setelah inisialisasi app
@@ -2180,13 +2186,42 @@ def admin_profile():
     
     return render_template('admin_profile.html', user=user_dict, active_page='profile')
 
+try:
+    from api.ml_routes import ml_bp
+    app.register_blueprint(ml_bp)
+    print("✅ ML routes registered successfully")
+except ImportError as e:
+    print(f"⚠️ ML routes not available: {e}")
+except Exception as e:
+    print(f"⚠️ Error registering ML routes: {e}")
+
 if __name__ == '__main__':
     with app.app_context():
+        # Create database tables
         db.create_all()
+        print("✅ Database tables created")
+        
+        # Load ML models (optional - akan fallback ke existing logic jika gagal)
+        try:
+            from utils.model_loader import load_all_models
+            models_loaded = load_all_models()
+            if models_loaded:
+                print("✅ ML models loaded and ready")
+            else:
+                print("⚠️ ML models not loaded - using fallback methods")
+        except Exception as e:
+            print(f"⚠️ Could not load ML models: {e}")
+            print("💡 App will use existing prediction methods")
         
         # Uncomment this line to populate sample questions (run once)
         # populate_sample_questions()
     
-    print("🚀 Server running on http://localhost:5000")
-    print("💡 Run 'flask init-questions' to populate sample questions")
+    print("\n" + "="*60)
+    print("🚀 OmniMap Server Starting...")
+    print("="*60)
+    print(f"📊 Database: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    print(f"🌐 URL: http://localhost:5000")
+    print(f"💡 Press CTRL+C to stop")
+    print("="*60 + "\n")
+    
     app.run(debug=True, port=5000)
