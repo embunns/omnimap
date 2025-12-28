@@ -1,253 +1,447 @@
-// Test Management - Fixed Version
-document.addEventListener("DOMContentLoaded", () => {
-    
-    // Check if we're on the test page
-    if (typeof questionsData === 'undefined' || !questionsData || questionsData.length === 0) {
-        console.log("No questions data found or not on test page");
-        return;
-    }
+/* ============================================================
+   TES OMNI - Test Logic with Auto-Save & Exit Warning
+   ============================================================ */
+/* ============================================================
+   TES OMNI - Test Logic with Auto-Save & Exit Warning
+   ============================================================ */
 
-    console.log("Test initialized with", questionsData.length, "questions");
+let currentQuestionIndex = 0;
+let totalQuestions = 0;
+let answers = {};
+let timer = null;
+let timeRemaining = 3600;
+let hasUnsavedChanges = false;
+let currentAnswer = null;
+let isSubmitting = false; // TAMBAHKAN INI
 
-    let currentQuestion = 0;
-    let answers = {};
-    let timerInterval;
-    let timeRemaining = 3600; // 1 hour in seconds
-
-    const btnMulaiTes = document.getElementById("btn-start-test");
-    const introContent = document.getElementById("introContent");
-    const questionContent = document.getElementById("questionContent");
-    const tesWrapper = document.getElementById("test-wrapper");
-    const btnNext = document.getElementById("btnNextTest");
-    const btnPrev = document.getElementById("btnPrevTest");
-    const answerButtons = document.querySelectorAll(".tes-answer-btn");
-    const questionText = document.getElementById("questionText");
-    const questionCounter = document.getElementById("questionCounter");
-    const progressBar = document.getElementById("progressBar");
-    const timerDisplay = document.getElementById("timer");
-    const confirmTestModal = document.getElementById("ConfirmTestModal");
-    const finishTestModal = document.getElementById("FinishTestModal");
-    const btnConfirmSubmit = document.getElementById("btnConfirmSubmit");
-
-    // Start Timer
-    function startTimer() {
-        timerInterval = setInterval(() => {
-            timeRemaining--;
-            
-            const hours = Math.floor(timeRemaining / 3600);
-            const minutes = Math.floor((timeRemaining % 3600) / 60);
-            const seconds = timeRemaining % 60;
-            
-            timerDisplay.textContent = 
-                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            
-            if (timeRemaining <= 0) {
-                clearInterval(timerInterval);
-                autoSubmitTest();
-            }
-        }, 1000);
-    }
-
-    // Load Question
-    function loadQuestion(index) {
-        if (!questionsData || !questionsData[index]) {
-            console.error("Question not found at index", index);
-            return;
-        }
-
-        const question = questionsData[index];
-        console.log("Loading question", index + 1, ":", question);
-        
-        questionText.textContent = question.text;
-        questionCounter.textContent = `Pertanyaan ${index + 1} dari ${questionsData.length}`;
-        
-        // Update progress bar
-        const progress = ((index + 1) / questionsData.length) * 100;
-        progressBar.style.width = `${progress}%`;
-
-        // Reset answer buttons
-        answerButtons.forEach(btn => btn.classList.remove("active"));
-
-        // Load saved answer if exists
-        if (answers[question.id]) {
-            answerButtons.forEach(btn => {
-                if (parseInt(btn.dataset.value) === answers[question.id]) {
-                    btn.classList.add("active");
-                }
-            });
-        }
-
-        // Show/hide navigation buttons
-        btnPrev.style.display = index > 0 ? "block" : "none";
-        
-        // Change next button to finish on last question
-        if (index === questionsData.length - 1) {
-            btnNext.innerHTML = 'Selesai <i class="bi bi-check-circle"></i>';
-        } else {
-            btnNext.innerHTML = 'Selanjutnya <i class="bi bi-arrow-right"></i>';
-        }
-    }
-
-    // Start Test
-    if (btnMulaiTes && introContent && questionContent && tesWrapper) {
-        btnMulaiTes.addEventListener("click", () => {
-            console.log("Starting test...");
-            introContent.classList.add("d-none");
-            questionContent.classList.remove("d-none");
-            tesWrapper.classList.add("no-paper");
-            startTimer();
-            loadQuestion(0);
-        });
-    }
-
-    // Select Answer
-    answerButtons.forEach(btn => {
-        btn.addEventListener("click", (e) => {
-            e.preventDefault();
-            
-            // Remove active from all buttons
-            answerButtons.forEach(b => b.classList.remove("active"));
-            
-            // Add active to clicked button
-            btn.classList.add("active");
-            
-            const questionId = questionsData[currentQuestion].id;
-            answers[questionId] = parseInt(btn.dataset.value);
-            
-            console.log("Answer selected for question", questionId, ":", answers[questionId]);
-            console.log("Total answers:", Object.keys(answers).length);
-        });
-    });
-
-    // Next Button
-    if (btnNext) {
-        btnNext.addEventListener("click", (e) => {
-            e.preventDefault();
-            
-            const questionId = questionsData[currentQuestion].id;
-            
-            // Check if answer is selected
-            if (!answers[questionId]) {
-                alert("Silakan pilih jawaban terlebih dahulu!");
-                return;
-            }
-
-            console.log("Next button clicked. Current question:", currentQuestion);
-
-            if (currentQuestion === questionsData.length - 1) {
-                // Last question - show confirmation modal
-                console.log("Last question reached. Showing confirmation modal.");
-                const modal = new bootstrap.Modal(confirmTestModal);
-                modal.show();
-            } else {
-                // Go to next question
-                currentQuestion++;
-                console.log("Moving to question:", currentQuestion + 1);
-                loadQuestion(currentQuestion);
-            }
-        });
-    }
-
-    // Previous Button
-    if (btnPrev) {
-        btnPrev.addEventListener("click", (e) => {
-            e.preventDefault();
-            
-            if (currentQuestion > 0) {
-                currentQuestion--;
-                console.log("Moving back to question:", currentQuestion + 1);
-                loadQuestion(currentQuestion);
-            }
-        });
-    }
-
-    // Confirm Submit
-    if (btnConfirmSubmit) {
-        btnConfirmSubmit.addEventListener("click", (e) => {
-            e.preventDefault();
-            console.log("Submit confirmed");
-            submitTest();
-        });
-    }
-
-    // Submit Test
-    function submitTest() {
-        console.log("Submitting test...");
-        
-        // Close confirmation modal
-        const confirmModal = bootstrap.Modal.getInstance(confirmTestModal);
-        if (confirmModal) confirmModal.hide();
-
-        // Stop timer
-        clearInterval(timerInterval);
-
-        // Prepare data
-        const testData = {
-            user_id: userId,
-            answers: answers,
-            time_taken: 3600 - timeRemaining
-        };
-
-        console.log("Submitting data:", testData);
-
-        // Send to server
-        fetch('/api/submit-test', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(testData)
-        })
-        .then(response => {
-            console.log("Response status:", response.status);
-            return response.json();
-        })
-        .then(data => {
-            console.log("Response data:", data);
-            
-            if (data.success) {
-                // Show finish modal
-                const modal = new bootstrap.Modal(finishTestModal);
-                modal.show();
-
-                // Redirect after 2 seconds
-                setTimeout(() => {
-                    window.location.href = '/hasil-tes';
-                }, 2000);
-            } else {
-                alert('Terjadi kesalahan: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Terjadi kesalahan saat mengirim data: ' + error.message);
-        });
-    }
-
-    // Auto Submit when time runs out
-    function autoSubmitTest() {
-        alert("Waktu habis! Tes akan otomatis di-submit.");
-        submitTest();
-    }
-
-    // Save progress before leaving
-    window.addEventListener('beforeunload', (e) => {
-        if (Object.keys(answers).length > 0 && currentQuestion < questionsData.length - 1) {
-            e.preventDefault();
-            e.returnValue = '';
-            
-            // Save progress to server
-            fetch('/api/save-progress', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    user_id: userId,
-                    answers: answers,
-                    current_question: currentQuestion
-                })
-            });
-        }
-    });
+document.addEventListener('DOMContentLoaded', function() {
+  loadSavedProgress();
+  setupTestEventListeners();
+  setupExitWarning();
 });
+
+function loadSavedProgress() {
+  fetch('/api/load-saved-answers')
+    .then(response => response.json())
+    .then(data => {
+      if (data.success && data.has_saved_progress) {
+        answers = data.answers;
+        console.log('✅ Loaded saved answers:', Object.keys(answers).length);
+      }
+    })
+    .catch(error => console.error('Error loading saved progress:', error));
+}
+
+function setupTestEventListeners() {
+  // Start test button
+  const btnStart = document.getElementById('btn-start-test');
+  if (btnStart) {
+    btnStart.addEventListener('click', startTest);
+  }
+  
+  // Answer buttons
+  document.querySelectorAll('.tes-answer-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      selectAnswer(this);
+    });
+  });
+  
+  // Navigation buttons
+  const btnNext = document.getElementById('btnNextTest');
+  const btnPrev = document.getElementById('btnPrevTest');
+  
+  if (btnNext) {
+    btnNext.addEventListener('click', nextQuestion);
+  }
+  
+  if (btnPrev) {
+    btnPrev.addEventListener('click', prevQuestion);
+  }
+  
+  // Submit confirmation
+  const btnConfirmSubmit = document.getElementById('btnConfirmSubmit');
+  if (btnConfirmSubmit) {
+    btnConfirmSubmit.addEventListener('click', submitTest);
+  }
+}
+
+function setupExitWarning() {
+  // HAPUS beforeunload - ganti dengan ini:
+  window.addEventListener('beforeunload', function(e) {
+    const questionContent = document.getElementById('questionContent');
+    // Hanya warn jika test sedang berjalan DAN belum submit
+    if (questionContent && 
+        !questionContent.classList.contains('d-none') && 
+        Object.keys(answers).length > 0 && 
+        !isSubmitting) {
+      e.preventDefault();
+      return '';
+    }
+  });
+  
+  // Event delegation untuk semua link
+  document.addEventListener('click', function(e) {
+    const questionContent = document.getElementById('questionContent');
+    
+    // Cek apakah test sedang aktif
+    if (!questionContent || questionContent.classList.contains('d-none') || isSubmitting) {
+      return; // Test belum mulai atau sudah submit, izinkan navigasi
+    }
+    
+    // Cek apakah yang diklik adalah link navigasi
+    const link = e.target.closest('a, button[onclick*="location"]');
+    
+    if (link) {
+      const href = link.getAttribute('href');
+      const onclick = link.getAttribute('onclick');
+      const isSignOut = link.id === 'signOutBtn' || link.closest('#signOutBtn');
+      
+      // Skip jika signout (sudah punya modal sendiri)
+      if (isSignOut) {
+        return;
+      }
+      
+      // Skip jika button dalam test (prev/next)
+      if (link.id === 'btnNextTest' || link.id === 'btnPrevTest') {
+        return;
+      }
+      
+      // Cek jika ada jawaban dan user mau keluar
+      if (Object.keys(answers).length > 0) {
+        let targetUrl = null;
+        
+        if (href && href !== '#' && !href.startsWith('javascript:')) {
+          targetUrl = href;
+        } else if (onclick) {
+          const match = onclick.match(/['"](.*?)['"]/);
+          if (match) targetUrl = match[1];
+        }
+        
+        if (targetUrl) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          showExitWarningModal(targetUrl);
+        }
+      }
+    }
+  }, true); // PENTING: useCapture = true
+}
+
+function showExitWarningModal(targetUrl) {
+  const exitModal = new bootstrap.Modal(document.getElementById('ExitWarningModal'));
+  exitModal.show();
+  
+  document.getElementById('btnConfirmExit').onclick = function() {
+    isSubmitting = true; // Bypass warning
+    exitModal.hide();
+    setTimeout(() => {
+      window.location.href = targetUrl;
+    }, 300);
+  };
+}
+
+function showExitWarningModal(targetUrl) {
+  const exitModal = new bootstrap.Modal(document.getElementById('ExitWarningModal'));
+  exitModal.show();
+  
+  // Handle confirm exit
+  document.getElementById('btnConfirmExit').onclick = function() {
+    hasUnsavedChanges = false;
+    // Tutup modal dulu
+    exitModal.hide();
+    // Redirect setelah modal ditutup
+    setTimeout(() => {
+      window.location.href = targetUrl;
+    }, 300);
+  };
+}
+
+function showExitWarningPopup(targetUrl) {
+  const popup = document.getElementById('exitWarningPopup');
+  if (popup) {
+    popup.classList.add('active');
+    
+    // Save and exit
+    document.getElementById('btnSaveAndExit').onclick = function() {
+      saveProgressAndExit(targetUrl);
+    };
+    
+    // Exit without saving
+    document.getElementById('btnExitWithoutSave').onclick = function() {
+      hasUnsavedChanges = false;
+      window.location.href = targetUrl;
+    };
+    
+    // Cancel
+    document.getElementById('btnCancelExit').onclick = function() {
+      popup.classList.remove('active');
+    };
+  }
+}
+
+function saveProgressAndExit(targetUrl) {
+  const saveData = {
+    user_id: userId,
+    answers: answers,
+    current_question: currentQuestionIndex
+  };
+  
+  fetch('/api/save-progress', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(saveData)
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      hasUnsavedChanges = false;
+      window.location.href = targetUrl;
+    }
+  })
+  .catch(error => {
+    console.error('Error saving progress:', error);
+    alert('Gagal menyimpan progress. Coba lagi.');
+  });
+}
+
+function startTest() {
+  if (!questionsData || questionsData.length === 0) {
+    showValidationModal('Data Tidak Tersedia', 'Data pertanyaan tidak tersedia. Silakan hubungi admin.');
+    return;
+  }
+  
+  totalQuestions = questionsData.length;
+  
+  document.getElementById('introContent').classList.add('d-none');
+  document.getElementById('questionContent').classList.remove('d-none');
+  
+  startTimer();
+  loadQuestion();
+  hasUnsavedChanges = true;
+}
+
+function startTimer() {
+  timer = setInterval(function() {
+    timeRemaining--;
+    updateTimerDisplay();
+    
+    if (timeRemaining <= 0) {
+      clearInterval(timer);
+      showValidationModal('Waktu Habis!', 'Tes akan otomatis disubmit.');
+      setTimeout(() => {
+        submitTest();
+      }, 2000);
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const hours = Math.floor(timeRemaining / 3600);
+  const minutes = Math.floor((timeRemaining % 3600) / 60);
+  const seconds = timeRemaining % 60;
+  
+  const display = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  document.getElementById('timer').textContent = display;
+  
+  // Warning when time is running out
+  if (timeRemaining <= 300) { // 5 minutes
+    document.getElementById('timer').style.color = '#dc2626';
+  }
+}
+
+function loadQuestion() {
+  const question = questionsData[currentQuestionIndex];
+  
+  // Update question text
+  document.getElementById('questionText').textContent = question.text;
+  
+  // Update counter
+  document.getElementById('questionCounter').textContent = 
+    `Pertanyaan ${currentQuestionIndex + 1} dari ${totalQuestions}`;
+  
+  // Update progress bar
+  const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
+  document.getElementById('progressBar').style.width = progress + '%';
+  
+  // Reset answer buttons
+  document.querySelectorAll('.tes-answer-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  
+  // Reset current answer
+  currentAnswer = null;
+  document.getElementById('btnNextTest').style.opacity = '0.6';
+  
+  // Restore saved answer if exists
+  const questionId = question.id;
+  if (answers[questionId]) {
+    currentAnswer = answers[questionId];
+    const selectedBtn = document.querySelector(`[data-value="${currentAnswer}"]`);
+    if (selectedBtn) {
+      selectedBtn.classList.add('active');
+      document.getElementById('btnNextTest').style.opacity = '1';
+    }
+  }
+  
+  // Update navigation buttons
+  const btnPrev = document.getElementById('btnPrevTest');
+  const btnNext = document.getElementById('btnNextTest');
+  
+  btnPrev.style.display = currentQuestionIndex > 0 ? 'block' : 'none';
+  
+  if (currentQuestionIndex === totalQuestions - 1) {
+    btnNext.innerHTML = 'Selesai <i class="bi bi-check-circle"></i>';
+  } else {
+    btnNext.innerHTML = 'Selanjutnya <i class="bi bi-arrow-right"></i>';
+  }
+}
+
+function selectAnswer(button) {
+  // Remove active from all buttons
+  document.querySelectorAll('.tes-answer-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  
+  // Add active to clicked button
+  button.classList.add('active');
+  
+  // Save answer temporarily
+  currentAnswer = parseInt(button.dataset.value);
+  
+  // Enable next button
+  document.getElementById('btnNextTest').style.opacity = '1';
+  
+  // Mark as having unsaved changes
+  hasUnsavedChanges = true;
+}
+
+
+function prevQuestion() {
+  if (currentQuestionIndex > 0) {
+    currentQuestionIndex--;
+    loadQuestion();
+  }
+}
+
+function nextQuestion() {
+  // Validate answer selected - LANGSUNG MODAL, TANPA ALERT
+  if (currentAnswer === null) {
+    showValidationModal('Mohon Pilih Jawaban Terlebih Dahulu', 
+                        'Anda harus memilih salah satu jawaban sebelum melanjutkan.');
+    return;
+  }
+  
+  const questionId = questionsData[currentQuestionIndex].id;
+  answers[questionId] = currentAnswer;
+  
+  autoSaveProgress();
+  currentAnswer = null;
+  
+  if (currentQuestionIndex < totalQuestions - 1) {
+    currentQuestionIndex++;
+    loadQuestion();
+  } else {
+    const confirmModal = new bootstrap.Modal(document.getElementById('ConfirmTestModal'));
+    confirmModal.show();
+  }
+}
+
+function showValidationModal(title, message) {
+  const modal = document.getElementById('ValidationModal');
+  const modalTitle = modal.querySelector('h4');
+  const modalMessage = modal.querySelector('p');
+  
+  if (modalTitle) modalTitle.innerHTML = `<b>${title}</b>`;
+  if (modalMessage) modalMessage.textContent = message;
+  
+  const validationModal = new bootstrap.Modal(modal);
+  validationModal.show();
+}
+
+function showValidationModal() {
+  const validationModal = new bootstrap.Modal(document.getElementById('ValidationModal'));
+  validationModal.show();
+}
+
+// Hapus fungsi showValidationPopup() yang lama jika ada
+
+// Close validation popup
+document.getElementById('btnValidationOk')?.addEventListener('click', function() {
+  document.getElementById('validationPopup').classList.remove('active');
+});
+
+// Close popup when clicking outside
+document.getElementById('validationPopup')?.addEventListener('click', function(e) {
+  if (e.target === this) {
+    this.classList.remove('active');
+  }
+});
+
+function autoSaveProgress() {
+  // Debounced auto-save
+  clearTimeout(window.autoSaveTimeout);
+  window.autoSaveTimeout = setTimeout(() => {
+    fetch('/api/auto-save-progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        answers: answers,
+        current_question: currentQuestionIndex
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        console.log('✅ Auto-saved:', data.answers_saved, 'answers');
+        hasUnsavedChanges = false;
+      }
+    })
+    .catch(error => console.error('Auto-save error:', error));
+  }, 1000); // Save after 1 second of no activity
+}
+
+function submitTest() {
+  if (Object.keys(answers).length < totalQuestions) {
+    showValidationModal('Pertanyaan Belum Lengkap', 
+                        `Masih ada ${totalQuestions - Object.keys(answers).length} pertanyaan yang belum dijawab!`);
+    return;
+  }
+  
+  if (timer) clearInterval(timer);
+  
+  const timeTaken = 3600 - timeRemaining;
+  const submitData = {
+    user_id: userId,
+    answers: answers,
+    time_taken: timeTaken
+  };
+  
+  isSubmitting = true; // Bypass exit warning
+  
+  fetch('/api/submit-test', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(submitData)
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      hasUnsavedChanges = false;
+      const finishModal = new bootstrap.Modal(document.getElementById('FinishTestModal'));
+      finishModal.show();
+      
+      setTimeout(() => {
+        window.location.href = data.redirect || '/hasil-tes';
+      }, 2000);
+    } else {
+      isSubmitting = false;
+      showValidationModal('Gagal Submit', 'Terjadi kesalahan: ' + data.message);
+    }
+  })
+  .catch(error => {
+    console.error('Submit error:', error);
+    isSubmitting = false;
+    showValidationModal('Gagal Submit', 'Gagal submit tes. Silakan coba lagi.');
+  });
+}

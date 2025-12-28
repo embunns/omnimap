@@ -43,8 +43,7 @@ ul {
   display: flex;
   align-items: center;
   justify-content: center;
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 100;
   background: #fff;
   padding: 0 10px;
@@ -55,6 +54,12 @@ ul {
   width: 140px;
   display: block;
 }
+
+.omnimap-logo-collapsed {
+  width: 40px;
+  display: none;
+}
+
 .sidebar-hamburger {
   font-size: 24px;
   cursor: pointer;
@@ -63,12 +68,21 @@ ul {
 }
 
 /* Sidebar collapse (desktop) */
-#sidebar.hide .omnimap-logo-full,
-#sidebar.hide .omnimap-brand-link {
+#sidebar.hide .omnimap-logo-full {
   display: none;
 }
-#sidebar.hide .sidebar-hamburger {
+
+#sidebar.hide .omnimap-logo-collapsed {
   display: block;
+}
+
+#sidebar.hide .omnimap-brand-link {
+  display: flex;
+  justify-content: center;
+}
+
+#sidebar.hide .sidebar-hamburger {
+  display: none !important;
 }
 
 /* MENU */
@@ -144,8 +158,7 @@ ul {
   padding: 0 24px;
   display: flex;
   align-items: center;
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 100;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
@@ -157,7 +170,7 @@ ul {
 
 /* ⚠️ rule ini hanya relevan di desktop */
 #sidebar.hide + #content .nav-hamburger {
-  display: none;
+  display: block !important;
 }
 
 .navbar-right {
@@ -181,6 +194,22 @@ ul {
   width: 40px;
   height: 40px;
   border-radius: 50%;
+}
+
+.user-info-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.2;
+}
+
+.user-info-text strong {
+  font-size: 13px;
+}
+
+.user-info-text small {
+  font-size: 11px;
+  color: #999;
 }
 
 /* =============== Kategori Kegiatan =============== */
@@ -437,20 +466,75 @@ textarea {
   color: #6b7280;
 }
 
+/* Contact Fields */
+.contact-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.contact-fields input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.contact-fields input:focus {
+  outline: none;
+  border-color: #ce181b;
+}
+
 /* Multiple Input (+) */
 .multiple-input {
   position: relative;
 }
 
-.multiple-input button {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
+.multiple-input .input-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.multiple-input .input-row input {
+  flex: 1;
+}
+
+.multiple-input .input-row:last-child {
+  margin-bottom: 0;
+}
+
+.multiple-input .btn-add-input,
+.multiple-input .btn-remove-input {
   border: none;
-  background: #f3f4f6;
   border-radius: 8px;
-  padding: 6px 8px;
+  padding: 10px 12px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.multiple-input .btn-add-input {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.multiple-input .btn-add-input:hover {
+  background: #bbf7d0;
+}
+
+.multiple-input .btn-remove-input {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.multiple-input .btn-remove-input:hover {
+  background: #fecaca;
 }
 
 /* HIDE CALENDAR ICON BAWAAN BROWSER */
@@ -580,6 +664,12 @@ input[type="date"] {
   border-radius: 18px;
   padding: 24px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.kegiatan-card:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
 }
 
 /* Header */
@@ -615,8 +705,16 @@ input[type="date"] {
 /* Info Section */
 .kegiatan-info {
   display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.info-items-container {
+  display: flex;
   flex-direction: column;
   gap: 12px;
+  flex: 1;
 }
 
 .info-item {
@@ -630,6 +728,61 @@ input[type="date"] {
 .info-item img {
   width: 18px;
   height: 18px;
+}
+
+/* =============== ACTION BUTTONS ================= */
+.kegiatan-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+
+.btn-edit,
+.btn-delete {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-edit {
+  background-color: #d5ffe7;
+  color: #009c4b;
+}
+
+.btn-edit:hover {
+  background-color: #a8f5d1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 156, 75, 0.3);
+}
+
+.btn-edit:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 156, 75, 0.2);
+}
+
+.btn-delete {
+  background-color: #ffe2e2;
+  color: #aa1013;
+}
+
+.btn-delete:hover {
+  background-color: #ffb3b5;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(170, 16, 19, 0.3);
+}
+
+.btn-delete:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(170, 16, 19, 0.2);
 }
 
 /* =============== LOGOUT MODAL ================= */
@@ -697,7 +850,162 @@ input[type="date"] {
   text-decoration: none;
   text-align: center;
 }
+/* =============== DELETE MODAL (UPDATE) =============== */
+#modalDeleteKegiatan .modal-container {
+  max-width: 500px;
+  max-height: 500px;
+  border-radius: 16px; /* Lebih persegi */
+  padding: 0;
+}
 
+#modalDeleteKegiatan .modal-body {
+  text-align: center;
+  padding: 40px 32px !important;
+}
+
+#modalDeleteKegiatan .modal-body > div:first-child {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+}
+
+#modalDeleteKegiatan .modal-body i {
+  font-size: 2.5rem;
+  color: #c62828;
+}
+
+#modalDeleteKegiatan h5 {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  margin-bottom: 12px !important;
+  color: #1f2937;
+}
+
+#modalDeleteKegiatan #deleteKegiatanName {
+  color: #ce181b;
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+#modalDeleteKegiatan p {
+  color: #6b7280;
+  font-size: 14px;
+  margin-bottom: 32px;
+}
+
+/* Button Container - Horizontal */
+#modalDeleteKegiatan .modal-body > div:last-child {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+}
+
+#modalDeleteKegiatan .btn-upload {
+  flex: 1;
+  max-width: 225px;
+  padding: 14px 24px !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  border-radius: 12px;
+  margin: 0 !important;
+}
+
+#modalDeleteKegiatan #btnCancelDelete {
+  background: #fff !important;
+  color: #ce181b !important;
+  border: 1.5px solid #ce181b !important;
+}
+
+#modalDeleteKegiatan #btnConfirmDelete {
+  background: #ce181b !important;
+  color: #fff !important;
+}
+
+/* =============== SUCCESS MODAL (UPDATE) =============== */
+#modalSuccess .modal-container {
+  max-width: 540px;
+  border-radius: 16px; /* Lebih persegi */
+  padding: 0;
+}
+
+#modalSuccess .modal-body {
+  text-align: center;
+  padding: 48px 40px !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#modalSuccess .modal-body img {
+  width: 320px !important;
+  height: auto;
+  margin: 0 auto 28px !important;
+  display: block;
+}
+
+#modalSuccess h5 {
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  margin-bottom: 12px !important;
+  color: #1f2937;
+  text-align: center;
+}
+
+#modalSuccess p {
+  color: #6b7280 !important;
+  font-size: 15px !important;
+  margin-bottom: 32px !important;
+  text-align: center;
+  line-height: 1.5;
+}
+
+#modalSuccess .btn-upload {
+  max-width: 200px !important;
+  margin: 0 auto !important;
+  padding: 14px 32px !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  border-radius: 12px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  #modalDeleteKegiatan .modal-container,
+  #modalSuccess .modal-container {
+    max-width: 92%;
+    border-radius: 14px;
+  }
+  
+  #modalDeleteKegiatan .modal-body {
+    padding: 32px 24px !important;
+  }
+  
+  #modalDeleteKegiatan .modal-body > div:last-child {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  #modalDeleteKegiatan .btn-upload {
+    max-width: 100%;
+  }
+  
+  #modalSuccess .modal-body {
+    padding: 36px 28px !important;
+  }
+  
+  #modalSuccess .modal-body img {
+    width: 110px !important;
+    margin-bottom: 20px !important;
+  }
+}
 /* =============== Responsive =============== */
 /* Responsif untuk layar kecil (Tablet/HP) */
 @media (max-width: 768px) {
@@ -709,6 +1017,17 @@ input[type="date"] {
   #sidebar.hide .omnimap-logo-full,
   #sidebar.hide .omnimap-brand-link,
   #sidebar.hide .side-menu a .text {
+    display: block !important;
+  }
+
+  /* TAMBAHAN: Sembunyikan logo collapsed di mobile */
+  #sidebar.hide .omnimap-logo-collapsed,
+  .omnimap-logo-collapsed {
+    display: none !important;
+  }
+
+  /* Pastikan logo full muncul di mobile */
+  .omnimap-logo-full {
     display: block !important;
   }
 
@@ -742,8 +1061,42 @@ input[type="date"] {
 
   /* ===== CONTENT FULL WIDTH ===== */
   #content {
-    width: 100% !important;
-    left: 0 !important;
+    width: 100%;
+    left: 0;
+  }
+  #sidebar.hide + #content {
+    width: 100%;
+    left: 0;
+  }
+  /* Di Mobile, Navbar Hamburger SELALU butuh ada */
+  #sidebar.hide + #content .nav-hamburger {
+    display: block !important;
+  }
+
+  .filter-bar-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .search-box-new {
+    width: 100%;
+  }
+  .actions-new {
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 480px) {
+  .logout-card {
+    padding: 28px 20px;
+    border-radius: 20px;
+  }
+
+  .logout-card h2 {
+    font-size: 18px;
+  }
+
+  .logout-actions {
+    flex-direction: column;
   }
 }
 
@@ -799,7 +1152,23 @@ input[type="date"] {
   }
 
   .kegiatan-info {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .info-items-container {
     gap: 10px;
+  }
+
+  .kegiatan-actions {
+    gap: 8px;
+  }
+
+  .btn-edit,
+  .btn-delete {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
   }
 }
 
@@ -827,4 +1196,340 @@ input[type="date"] {
   .logout-actions {
     flex-direction: column;
   }
+}
+/* Multi-select styling */
+select[multiple] {
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+select[multiple] option {
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin: 2px 0;
+}
+
+select[multiple] option:checked {
+  background: linear-gradient(90deg, #ce181b 0%, #a01316 100%);
+  color: white;
+}
+
+select[multiple]:focus {
+  outline: none;
+  border-color: #ce181b;
+  box-shadow: 0 0 0 3px rgba(206, 24, 27, 0.1);
+}
+
+/* Traits Checkbox Container */
+.traits-checkbox-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f9fafb;
+}
+
+.trait-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid #e5e7eb;
+}
+
+.trait-checkbox:hover {
+  background: #fef2f2;
+  border-color: #ce181b;
+}
+
+.trait-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #ce181b;
+}
+
+.trait-checkbox input[type="checkbox"]:checked + span {
+  color: #ce181b;
+  font-weight: 600;
+}
+
+.trait-checkbox span {
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.4;
+  user-select: none;
+}
+
+/* Scrollbar styling */
+.traits-checkbox-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.traits-checkbox-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.traits-checkbox-container::-webkit-scrollbar-thumb {
+  background: #ce181b;
+  border-radius: 10px;
+}
+/* =============== NOTIFICATION STYLES =============== */
+.notification-wrapper {
+  position: relative;
+  margin-right: 20px;
+}
+
+.notification-icon {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.notification-icon:hover {
+  transform: scale(1.1);
+}
+
+.notification-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #dc3545;
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: bold;
+  min-width: 18px;
+  text-align: center;
+  display: none;
+}
+
+.notification-badge.show {
+  display: block;
+}
+
+.notification-dropdown {
+  position: absolute;
+  top: 45px;
+  right: 0;
+  width: 380px;
+  max-height: 500px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  display: none;
+  flex-direction: column;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.notification-dropdown.show {
+  display: flex;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f8f9fa;
+}
+
+.notification-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.mark-all-read {
+  background: none;
+  border: none;
+  color: #007bff;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.mark-all-read:hover {
+  background: #e3f2fd;
+}
+
+.notification-list {
+  overflow-y: auto;
+  max-height: 400px;
+}
+
+.notification-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notification-list::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+.notification-item {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  gap: 12px;
+}
+
+.notification-item:hover {
+  background: #f8f9fa;
+}
+
+.notification-item.unread {
+  background: #e3f2fd;
+}
+
+.notification-item.unread:hover {
+  background: #d1e7fd;
+}
+
+.notification-icon-wrapper {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.notification-icon-wrapper.info {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.notification-icon-wrapper.success {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+
+.notification-icon-wrapper.warning {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.notification-icon-wrapper.danger {
+  background: #ffebee;
+  color: #d32f2f;
+}
+
+.notification-content {
+  flex: 1;
+}
+
+.notification-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.notification-message {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.notification-time {
+  font-size: 12px;
+  color: #999;
+}
+
+.notification-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #999;
+}
+
+.notification-empty i {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.notification-loading {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 12px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive untuk Action Buttons di mobile */
+@media (max-width: 480px) {
+  .kegiatan-card {
+    padding: 16px;
+    margin: 12px;
+  }
+
+  .kegiatan-info {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .info-items-container {
+    gap: 10px;
+  }
+
+  .kegiatan-actions {
+    gap: 6px;
+  }
+
+  .btn-edit,
+  .btn-delete {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+    border-radius: 8px;
+  }
+  
 }

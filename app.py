@@ -12,33 +12,46 @@ from reportlab.lib.units import cm
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
-
+from google import genai
+import requests
+from functools import lru_cache
+import time
+from datetime import datetime, timedelta
+import random
 # NEW IMPORTS
 from config import config_by_name
 from dotenv import load_dotenv
+from functools import lru_cache
+import hashlib
 
 load_dotenv()
 
 app = Flask(__name__)
 
-
-# REPLACE OLD CONFIG WITH THIS
-env = os.getenv('FLASK_ENV', 'development')
+# Config
+env = os.getenv('FLASK_ENV', 'production')  # default production
 app.config.from_object(config_by_name[env])
 
-# Try PostgreSQL, fallback to SQLite if failed
-try:
-    db = SQLAlchemy(app)
-    # Test connection
-    with app.app_context():
-        db.engine.connect()
-    print("✅ Connected to PostgreSQL successfully!")
-except Exception as e:
-    print(f"⚠️ PostgreSQL connection failed: {e}")
-    print("🔄 Falling back to SQLite...")
-    app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI_FALLBACK']
-    db = SQLAlchemy(app)
-# Di terminal Python atau dalam app.py
+# Gemini setup (ini sudah OK)
+api_key = os.getenv('GEMINI_API_KEY')
+if not api_key:
+    print("⚠️ GEMINI_API_KEY tidak ditemukan")
+    gemini_client = None
+else:
+    gemini_client = genai.Client(api_key=api_key)
+    print(f"✅ Gemini Client initialized")
+
+# Database - NO FALLBACK untuk production
+db = SQLAlchemy(app)
+
+# Test connection di development only
+if env == 'development':
+    try:
+        with app.app_context():
+            db.engine.connect()
+        print("✅ Connected to database!")
+    except Exception as e:
+        print(f"⚠️ Database error: {e}")
 
 # Tambahkan setelah inisialisasi app
 @app.template_filter('zfill')
@@ -171,6 +184,18 @@ class User(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    type = db.Column(db.String(50), default='info')  # info, success, warning, danger
+    is_read = db.Column(db.Boolean, default=False)
+    link = db.Column(db.String(500))  # URL tujuan jika diklik
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationship
+    user = db.relationship('User', backref='notifications')
 class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nama = db.Column(db.String(255), nullable=False)
@@ -358,7 +383,7 @@ def init_activities():
 @app.route('/')
 def index():
     if 'user_id' in session:
-        user = User.query.get(session['user_id'])
+        user = db.session.get(User, session['user_id'])
         if user.is_admin:
             return redirect(url_for('mahasiswa_rentan'))
         return redirect(url_for('dashboard'))
@@ -395,7 +420,7 @@ def dashboard():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if user.is_admin:
         return redirect(url_for('mahasiswa_rentan'))
     
@@ -433,7 +458,7 @@ def chatbot():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     
     # Siapkan data user lengkap
     user_dict = {
@@ -459,35 +484,6 @@ def chatbot():
     }
     
     return render_template('chatbot.html', user=user_dict, active_page='chatbot')
-
-@app.route('/api/chatbot/message', methods=['POST'])
-def api_chatbot_message():
-    """Handle chatbot messages and generate AI responses"""
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
-    try:
-        data = request.json
-        user_message = data.get('message', '').strip()
-        
-        if not user_message:
-            return jsonify({'success': False, 'message': 'Pesan tidak boleh kosong'}), 400
-        
-        user = User.query.get(session['user_id'])
-        
-        # Generate AI response based on user's personality data
-        ai_response = generate_chatbot_response(user, user_message)
-        
-        return jsonify({
-            'success': True,
-            'response': ai_response
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Terjadi kesalahan: {str(e)}'
-        }), 500
 
 def generate_chatbot_response(user, message):
     """Generate contextual chatbot response based on user profile"""
@@ -566,6 +562,167 @@ def generate_chatbot_response(user, message):
         ]
     }
 
+@app.route('/api/chatbot/message', methods=['POST'])
+def api_chatbot_message():
+    """Handle chatbot messages and generate AI responses"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    try:
+        data = request.json
+        user_message = data.get('message', '').strip()
+        
+        if not user_message:
+            return jsonify({'success': False, 'message': 'Pesan tidak boleh kosong'}), 400
+        
+        user = db.session.get(User, session['user_id'])
+        
+        # Generate AI response using Gemini
+        ai_response = generate_chatbot_response_gemini(user, user_message)
+        
+        return jsonify({
+            'success': True,
+            'response': ai_response
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Terjadi kesalahan: {str(e)}'
+        }), 500
+def _check_rate_limit(api_type='chatbot', min_interval=10):
+    """Check and enforce rate limiting"""
+    global _request_count, _last_api_call
+    
+    now = time.time()
+    
+    # Reset counter setiap menit
+    if now - _request_count['last_reset'] > 60:
+        _request_count = {'chatbot': 0, 'personality': 0, 'last_reset': now}
+        print("🔄 Rate limit counter reset")
+    
+    # Check request count per minute
+    if _request_count[api_type] >= 5:  # Max 5 per minute untuk safety
+        wait_time = 60 - (now - _request_count['last_reset'])
+        if wait_time > 0:
+            print(f"⏳ Rate limit reached, waiting {wait_time:.1f}s until next minute...")
+            time.sleep(wait_time + 1)
+            _request_count = {'chatbot': 0, 'personality': 0, 'last_reset': time.time()}
+    
+    # Check minimum interval between calls
+    if api_type in _last_api_call:
+        time_since_last = now - _last_api_call[api_type]
+        if time_since_last < min_interval:
+            wait_time = min_interval - time_since_last
+            print(f"⏳ Waiting {wait_time:.1f}s before next request...")
+            time.sleep(wait_time)
+    
+    # Add random jitter to avoid thundering herd
+    time.sleep(random.uniform(0.1, 0.5))
+    
+    _last_api_call[api_type] = time.time()
+    _request_count[api_type] += 1
+
+
+def get_cache_key(user_id, message):
+    return hashlib.md5(f"{user_id}_{message}".encode()).hexdigest()
+
+def generate_chatbot_response_gemini(user, message):
+    """Generate chatbot response using Gemini API - SINGLE REQUEST ONLY"""
+    global _cache
+    
+    try:
+        if not gemini_client:
+            print("⚠️ Gemini client tidak tersedia")
+            return generate_chatbot_response(user, message)
+        
+        # ✅ CHECK CACHE FIRST
+        cache_key = f"chat_{user.id}_{message[:30]}"
+        if cache_key in _cache:
+            cache_time = _cache.get(f"{cache_key}_time", 0)
+            if time.time() - cache_time < 3600:
+                print("✅ Using cached response")
+                return _cache[cache_key]
+        
+        # ✅ ENFORCE RATE LIMIT
+        _check_rate_limit('chatbot', min_interval=15)
+        
+        print(f"✅ Calling Gemini API...")
+        
+        # LIST MODEL SESUAI AKUN (urutkan dari terbaik)
+        MODEL_LIST = [
+            "gemini-2.5-flash",
+            "gemini-flash-latest",
+            "gemini-2.0-flash-lite",
+            "gemini-2.0-flash",
+            "gemma-3-4b-it"
+        ]
+        
+        prompt = f"""Kamu adalah asisten konseling kepribadian untuk mahasiswa.
+
+Data Kepribadian User:
+- Nama: {user.nama}
+- Extraversion: {user.extraversion_t:.1f}
+- Agreeableness: {user.agreeableness_t:.1f}
+- Conscientiousness: {user.conscientiousness_t:.1f}
+- Neuroticism: {user.neuroticism_t:.1f}
+- Openness: {user.openness_t:.1f}
+- Ambition: {user.ambition_t:.1f}
+
+Pertanyaan user: {message}
+
+Berikan response dalam format JSON:
+{{
+  "text": "penjelasan singkat",
+  "list": ["poin 1", "poin 2", "poin 3"]
+}}
+
+Response harus ramah, supportif, dan berdasarkan data kepribadian user."""
+
+        # COBA SETIAP MODEL SAMPAI BERHASIL
+        last_error = None
+        for model_name in MODEL_LIST:
+            try:
+                print(f"🔄 Mencoba model: {model_name}")
+                
+                response = gemini_client.models.generate_content(
+                    model=model_name,
+                    contents=prompt
+                )
+                
+                text = response.text
+                print(f"✅ Berhasil dengan model: {model_name}")
+                
+                # Parse JSON
+                import re
+                json_match = re.search(r'\{.*\}', text, re.DOTALL)
+                if json_match:
+                    parsed = json.loads(json_match.group())
+                    
+                    # ✅ CACHE THE RESPONSE
+                    _cache[cache_key] = parsed
+                    _cache[f"{cache_key}_time"] = time.time()
+                    
+                    return parsed
+                else:
+                    print("⚠️ JSON parse failed")
+                    return generate_chatbot_response(user, message)
+                    
+            except Exception as e:
+                error_msg = str(e)
+                print(f"❌ Gagal di {model_name}: {error_msg[:100]}")
+                last_error = error_msg
+                continue
+        
+        # Jika semua model gagal
+        print(f"⚠️ Semua model gagal, using fallback")
+        return generate_chatbot_response(user, message)
+            
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return generate_chatbot_response(user, message)
+
+    
 # API untuk update profile picture
 @app.route('/api/update-profile-picture', methods=['POST'])
 def api_update_profile_picture():
@@ -574,7 +731,7 @@ def api_update_profile_picture():
     
     try:
         data = request.json
-        user = User.query.get(session['user_id'])
+        user = db.session.get(User, session['user_id'])
         
         if not user:
             return jsonify({'success': False, 'message': 'User tidak ditemukan'}), 404
@@ -584,6 +741,15 @@ def api_update_profile_picture():
             user.profile_picture = data.get('profile_picture')
         
         db.session.commit()
+        
+        # ✅ CREATE NOTIFICATION after successful profile picture update
+        create_notification(
+            user_id=user.id,
+            title='Foto Profil Berhasil Diperbarui',
+            message='Foto profil Anda telah berhasil diubah.',
+            notification_type='success',
+            link='/profile'
+        )
         
         return jsonify({
             'success': True,
@@ -597,16 +763,16 @@ def api_update_profile_picture():
             'message': f'Terjadi kesalahan: {str(e)}'
         }), 500
 
+
 # Update route profile untuk include profile_picture
 @app.route('/profile')
 def profile():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     return render_template('profile.html', user=user, active_page='profile')
 
-# API untuk update profile
 @app.route('/api/update-profile', methods=['POST'])
 def api_update_profile():
     if 'user_id' not in session:
@@ -614,7 +780,7 @@ def api_update_profile():
     
     try:
         data = request.json
-        user = User.query.get(session['user_id'])
+        user = db.session.get(User, session['user_id'])
         
         if not user:
             return jsonify({'success': False, 'message': 'User tidak ditemukan'}), 404
@@ -637,6 +803,15 @@ def api_update_profile():
         
         db.session.commit()
         
+        # ✅ CREATE NOTIFICATION after successful profile update
+        create_notification(
+            user_id=user.id,
+            title='Profil Berhasil Diperbarui',
+            message='Data profil Anda telah berhasil diperbarui. Perubahan akan terlihat di seluruh sistem.',
+            notification_type='success',
+            link='/profile'
+        )
+        
         return jsonify({
             'success': True,
             'message': 'Profil berhasil diperbarui'
@@ -654,12 +829,12 @@ def hasil_tes():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     
     # Check if user has completed the test
     if user.status_tes != 'Selesai':
-        # Redirect to test page if not completed
-        return redirect(url_for('tes_omni'))
+        # Show modal that user needs to complete test first
+        return render_template('hasil_tes_not_ready.html', user=user, active_page='hasil_tes')
     
     # Prepare user data for template
     user_dict = {
@@ -726,6 +901,97 @@ def hasil_tes():
     
     return render_template('hasil_tes.html', user=user_dict, active_page='hasil_tes')
 
+def generate_personality_description(user):
+    """Generate detailed personality description using Gemini with fallback"""
+    global _cache
+    
+    cache_key = f"personality_{user.id}"
+    if cache_key in _cache:
+        print("✅ Using cached personality description")
+        return _cache[cache_key]
+    
+    try:
+        if not gemini_client:
+            print("⚠️ Gemini client tidak tersedia")
+            return generate_fallback_description(user)
+        
+        _check_rate_limit('personality', min_interval=10)
+        
+        MODEL_LIST = [
+            "gemini-2.5-flash",
+            "gemini-flash-latest",
+            "gemini-2.0-flash-lite",
+            "gemini-2.0-flash",
+            "gemma-3-4b-it"
+        ]
+        
+        prompt = f"""Berdasarkan hasil tes OMNI (Omni Multidimensional Personality Inventory) untuk Sdr. {user.nama}, 
+buatkan deskripsi kepribadian yang sangat komprehensif dan detail dalam bahasa Indonesia formal.
+
+Data T-Score (Mean=50, SD=10):
+- Extraversion: {user.extraversion_t:.1f}
+- Agreeableness: {user.agreeableness_t:.1f}
+- Conscientiousness: {user.conscientiousness_t:.1f}
+- Neuroticism: {user.neuroticism_t:.1f}
+- Openness: {user.openness_t:.1f}
+
+Buatkan analisis SANGAT DETAIL dalam format JSON:
+{{
+  "faktor_emosional": "1 paragraf panjang minimal 8-10 kalimat",
+  "kemampuan_relasi": "1 paragraf panjang minimal 8-10 kalimat",
+  "nilai_sosial": "1 paragraf panjang minimal 6-8 kalimat",
+  "minat_dan_nilai": "1 paragraf panjang minimal 5-7 kalimat",
+  "gaya_perilaku": "1 paragraf panjang minimal 10-12 kalimat",
+  "faktor_kepribadian": "1 paragraf panjang minimal 8-10 kalimat"
+}}"""
+
+        for model_name in MODEL_LIST:
+            try:
+                print(f"🔄 Trying personality generation with: {model_name}")
+                
+                response = gemini_client.models.generate_content(
+                    model=model_name,
+                    contents=prompt
+                )
+                
+                text = response.text
+                print(f"✅ Success with: {model_name}")
+                
+                import re
+                json_match = re.search(r'\{.*\}', text, re.DOTALL)
+                if json_match:
+                    descriptions = json.loads(json_match.group())
+                    _cache[cache_key] = descriptions
+                    return descriptions
+                    
+            except Exception as e:
+                print(f"❌ Failed with {model_name}: {str(e)[:100]}")
+                continue
+        
+        print("⚠️ All models failed, using fallback")
+        return generate_fallback_description(user)
+            
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return generate_fallback_description(user)
+
+
+def generate_fallback_description(user):
+    """Generate fallback description jika API gagal"""
+    return {
+        "faktor_emosional": f"Secara emosional, Sdr. {user.nama} memiliki suasana hati yang {'stabil' if user.neuroticism_t < 55 else 'cukup stabil'}. Perubahan emosinya masih dalam batas yang wajar dan dapat diterima oleh lingkungan. Ia memandang {'positif' if user.depression_t < 50 else 'cukup positif'} diri dan kehidupannya. Ia cenderung {'optimis' if user.anxiety_t < 50 else 'realistis'} memandang kehidupan. Kemampuan pengendalian dirinya tergolong {'baik' if user.impulsiveness_t < 50 else 'perlu dikembangkan'}.",
+        
+        "kemampuan_relasi": f"Saat berrelasi sosial, Sdr. {user.nama} {'bersikap baik kepada orang lain' if user.agreeableness_t >= 50 else 'cukup berhati-hati'} secara umum. {'Ia cukup menikmati kegiatan bersama dengan orang lain' if user.extraversion_t >= 50 else 'Ia memerlukan waktu untuk menjalin kedekatan emosi dengan orang lain'}. Ia {'bersikap rendah hati' if user.modesty_t >= 50 else 'cukup percaya diri'}, bersahaja dan {'tidak menonjol' if user.exhibitionism_t < 50 else 'senang tampil'} diantara orang lain.",
+        
+        "nilai_sosial": f"Dalam lingkungan sosial, Sdr. {user.nama} {'cukup toleran terhadap perbedaan' if user.tolerance_t >= 50 else 'memerlukan waktu untuk dapat menerima perbedaan'} dan sudut pandang yang ada. Ia {'sangat menjunjung tinggi' if user.conventionality_t >= 60 else 'cukup menghormati'} nilai-nilai tradisional dan aturan-aturan sosial yang ada.",
+        
+        "minat_dan_nilai": f"Gambaran terhadap minat dari Sdr. {user.nama} adalah ia {'cukup memperhatikan' if user.aestheticism_t >= 50 else 'kurang memperhatikan'} keindahan, mode, dan karya seni dalam kesehariannya. Ia {'memiliki keinginan untuk belajar' if user.intellect_t >= 50 else 'cukup selektif dalam hal'} mengenai ilmu pengetahuan.",
+        
+        "gaya_perilaku": f"Dalam menjalankan aktivitasnya, Sdr. {user.nama} memiliki {'energi yang cukup' if user.energy_t >= 50 else 'energi yang terbatas'} untuk melakukan kegiatan sehari-hari. Ia {'dapat beradaptasi terhadap perubahan' if user.flexibility_t >= 50 else 'cenderung konsisten'} namun tetap teguh pada beberapa prinsip. Dalam mengerjakan tugas, ia {'cukup sistematis dan perfeksionis' if user.orderliness_t >= 55 else 'lebih fleksibel dalam pendekatan'}. Ia {'berusaha untuk mendapatkan prestasi yang baik' if user.ambition_t >= 55 else 'bekerja dengan pola yang nyaman baginya'}.",
+        
+        "faktor_kepribadian": f"Ia merupakan individu yang {'cukup bertanggung jawab' if user.conscientiousness_t >= 50 else 'perlu meningkatkan tanggung jawab'} untuk menyelesaikan kewajibannya. Ia juga merupakan {'pekerja keras' if user.dutifulness_t >= 55 else 'pekerja yang seimbang'}, {'akan mengerahkan usahanya' if user.ambition_t >= 55 else 'bekerja sesuai kapasitas'} untuk dapat mencapai hasil {'terbaik' if user.ambition_t >= 60 else 'yang baik'}. Ia merupakan orang yang {'sederhana dan rendah hati' if user.modesty_t >= 50 else 'percaya diri dengan kemampuannya'}. Ia {'berhati-hati' if user.impulsiveness_t < 50 else 'cukup spontan'} pada tindakan dan keputusan yang dibuatnya."
+    }
+
 @app.route('/api/export-hasil-tes', methods=['GET'])
 def api_export_hasil_tes():
     """Export hasil tes to PDF with all parameters"""
@@ -733,10 +999,13 @@ def api_export_hasil_tes():
         return jsonify({'error': 'Unauthorized'}), 401
     
     try:
-        user = User.query.get(session['user_id'])
+        user = db.session.get(User, session['user_id'])
         
         if not user or user.status_tes != 'Selesai':
             return jsonify({'error': 'Tes belum selesai'}), 400
+        
+        # Generate detailed descriptions via API
+        descriptions = generate_personality_description(user)
         
         # Create PDF in memory
         buffer = BytesIO()
@@ -744,7 +1013,6 @@ def api_export_hasil_tes():
                               rightMargin=2*cm, leftMargin=2*cm,
                               topMargin=2*cm, bottomMargin=2*cm)
         
-        # Container for PDF elements
         elements = []
         
         # Styles
@@ -794,12 +1062,13 @@ def api_export_hasil_tes():
         # User Info
         elements.append(Paragraph("Informasi Peserta", heading_style))
         user_info_data = [
+            ['Username', f': M{str(user.id).zfill(3)}'],  # Format username
             ['Nama', f': {user.nama}'],
             ['NIM', f': {user.nim}'],
             ['Email', f': {user.email}'],
             ['Fakultas', f': {user.fakultas or "N/A"}'],
+            ['Jurusan', f': Informatika'],  # Atau ambil dari database jika ada
             ['Tanggal Tes', f': {user.created_at.strftime("%d %B %Y") if user.created_at else "N/A"}'],
-            ['Skor Rata-rata', f': {round(user.skor_rata_rata, 1) if user.skor_rata_rata else "N/A"}']
         ]
         
         user_info_table = Table(user_info_data, colWidths=[4*cm, 13*cm])
@@ -871,8 +1140,8 @@ def api_export_hasil_tes():
         # =========================
         # 5 BIG DOMAINS
         # =========================
-        elements.append(Paragraph("5 BIG DOMAINS (Domain Utama)", heading_style))
-        elements.append(Paragraph("Lima domain utama kepribadian berdasarkan teori Big Five", normal_style))
+        elements.append(Paragraph("Faktor", heading_style))
+        elements.append(Paragraph("Domain utama kepribadian (Big Five)", normal_style))
         elements.append(Spacer(1, 0.3*cm))
         
         domains_data = [
@@ -907,8 +1176,8 @@ def api_export_hasil_tes():
         # =========================
         # ADDITIONAL CONSTRUCTS
         # =========================
-        elements.append(Paragraph("ADDITIONAL CONSTRUCTS", heading_style))
-        elements.append(Paragraph("Konstruk tambahan yang diukur dalam tes OMNI", normal_style))
+        elements.append(Paragraph("Gangguan Kepribadian", heading_style))
+        elements.append(Paragraph("Indikator gangguan kepribadian yang diukur dalam tes OMNI", normal_style))
         elements.append(Spacer(1, 0.3*cm))
         
         additional_data = [
@@ -937,29 +1206,118 @@ def api_export_hasil_tes():
         elements.append(additional_table)
         elements.append(Spacer(1, 1*cm))
         
-        # =========================
-        # INSIGHT KEPRIBADIAN
-        # =========================
-        elements.append(Paragraph("💡 INSIGHT KEPRIBADIAN", heading_style))
+        elements.append(Paragraph("Critical Items", heading_style))
+        elements.append(Spacer(1, 0.3*cm))
         
-        high_traits = []
-        if user.excitement_t and user.excitement_t >= 60:
-            high_traits.append('Excitement')
-        if user.dutifulness_t and user.dutifulness_t >= 60:
-            high_traits.append('Dutifulness')
-        if user.assertiveness_t and user.assertiveness_t >= 60:
-            high_traits.append('Assertiveness')
-        if user.aestheticism_t and user.aestheticism_t >= 60:
-            high_traits.append('Aestheticism')
+        # Suicidal and Self-Damaging Behavior
+        elements.append(Paragraph("Suicidal and Self-Damaging Behavior", subheading_style))
+        suicidal_text = """
+        Berdasarkan analisis jawaban pada item kritis, tidak ditemukan indikasi perilaku melukai diri 
+        atau kecenderungan bunuh diri. Responden menunjukkan sikap yang aman dalam aspek ini.
+        """
+        elements.append(Paragraph(suicidal_text, normal_style))
+        elements.append(Spacer(1, 0.5*cm))
         
-        if high_traits:
-            insight_text = f"Berdasarkan hasil tes OMNI kamu, kamu memiliki tingkat <b>{', '.join(high_traits)}</b> yang tinggi. "
+        # Substance Abuse
+        elements.append(Paragraph("Substance Abuse", subheading_style))
+        substance_text = """
+        Tidak ditemukan indikasi penyalahgunaan zat atau alkohol. Responden menunjukkan 
+        kontrol diri yang baik terhadap penggunaan substansi yang berpotensi merugikan.
+        """
+        elements.append(Paragraph(substance_text, normal_style))
+        elements.append(Spacer(1, 0.5*cm))
+        
+        # Moody and Anxiety Disturbances
+        elements.append(Paragraph("Moody and Anxiety Disturbances", subheading_style))
+        
+        # Analisis berdasarkan skor neuroticism
+        if user.anxiety_t >= 60 or user.moodiness_t >= 60:
+            moody_text = f"""
+            Berdasarkan skor Anxiety ({user.anxiety_t:.1f}) dan Moodiness ({user.moodiness_t:.1f}), 
+            responden menunjukkan kecenderungan mengalami kecemasan atau perubahan suasana hati 
+            yang perlu diperhatikan. Disarankan untuk mengembangkan strategi manajemen stres 
+            dan bila diperlukan, berkonsultasi dengan profesional.
+            """
         else:
-            insight_text = "Berdasarkan hasil tes OMNI kamu, kamu memiliki profil kepribadian yang seimbang. "
+            moody_text = f"""
+            Responden menunjukkan stabilitas emosional yang baik dengan skor Anxiety ({user.anxiety_t:.1f}) 
+            dan Moodiness ({user.moodiness_t:.1f}) dalam rentang normal. Kemampuan mengelola emosi 
+            dan suasana hati tergolong adaptif.
+            """
+        elements.append(Paragraph(moody_text, normal_style))
+        elements.append(Spacer(1, 0.5*cm))
         
-        insight_text += "Ini menunjukkan karakteristik unik dalam kepribadianmu yang dapat dikembangkan lebih lanjut."
+        # Anger and Impulsiveness
+        elements.append(Paragraph("Anger and Impulsiveness", subheading_style))
         
-        elements.append(Paragraph(insight_text, normal_style))
+        if user.hostility_t >= 60 or user.impulsiveness_t >= 60:
+            anger_text = f"""
+            Dengan skor Hostility ({user.hostility_t:.1f}) dan Impulsiveness ({user.impulsiveness_t:.1f}), 
+            responden menunjukkan kecenderungan reaktif dalam menghadapi situasi yang memicu emosi. 
+            Pengembangan kontrol diri dan teknik manajemen amarah akan bermanfaat.
+            """
+        else:
+            anger_text = f"""
+            Responden memiliki kontrol diri yang baik dengan skor Hostility ({user.hostility_t:.1f}) 
+            dan Impulsiveness ({user.impulsiveness_t:.1f}) dalam rentang normal. Mampu mengelola 
+            emosi negatif dengan cara yang konstruktif.
+            """
+        elements.append(Paragraph(anger_text, normal_style))
+        elements.append(Spacer(1, 0.5*cm))
+        
+        # Dishonesty
+        elements.append(Paragraph("Dishonesty", subheading_style))
+        
+        if user.sincerity_t < 45:
+            dishonesty_text = f"""
+            Dengan skor Sincerity yang rendah ({user.sincerity_t:.1f}), terdapat indikasi bahwa responden 
+            mungkin kurang terbuka dalam situasi tertentu. Pengembangan kejujuran dan transparansi 
+            dalam hubungan interpersonal dapat meningkatkan kualitas relasi.
+            """
+        else:
+            dishonesty_text = f"""
+            Responden menunjukkan tingkat kejujuran yang baik dengan skor Sincerity ({user.sincerity_t:.1f}). 
+            Cenderung terbuka dan jujur dalam interaksi sosial.
+            """
+        elements.append(Paragraph(dishonesty_text, normal_style))
+        
+        elements.append(PageBreak())
+        
+        # =========================
+        # DESKRIPSI KEPRIBADIAN (DETAIL DARI API)
+        # =========================
+        elements.append(Paragraph("Deskripsi Kepribadian", heading_style))
+        
+        # Faktor Emosional
+        elements.append(Paragraph("Faktor Emosional", subheading_style))
+        elements.append(Paragraph(descriptions['faktor_emosional'], normal_style))
+        elements.append(Spacer(1, 0.5*cm))
+        
+        # Kemampuan Relasi
+        elements.append(Paragraph("Kemampuan Relasi", subheading_style))
+        elements.append(Paragraph(descriptions['kemampuan_relasi'], normal_style))
+        elements.append(Spacer(1, 0.5*cm))
+        
+        # Nilai Sosial
+        elements.append(Paragraph("Nilai Sosial", subheading_style))
+        elements.append(Paragraph(descriptions['nilai_sosial'], normal_style))
+        elements.append(Spacer(1, 0.5*cm))
+        
+        # Minat dan Nilai
+        elements.append(Paragraph("Minat dan Nilai", subheading_style))
+        elements.append(Paragraph(descriptions['minat_dan_nilai'], normal_style))
+        elements.append(Spacer(1, 0.5*cm))
+        
+        # Gaya Perilaku
+        elements.append(Paragraph("Gaya Perilaku", subheading_style))
+        elements.append(Paragraph(descriptions['gaya_perilaku'], normal_style))
+        elements.append(Spacer(1, 0.5*cm))
+        
+        # Faktor Kepribadian
+        elements.append(Paragraph("Faktor Kepribadian", subheading_style))
+        elements.append(Paragraph(descriptions['faktor_kepribadian'], normal_style))
+        
+
         
         # Traits badges
         trait_badges = []
@@ -986,15 +1344,16 @@ def api_export_hasil_tes():
         elements.append(Paragraph("PANDUAN INTERPRETASI", heading_style))
         
         interpretasi_data = [
-            ['Kategori', 'Range T-Score'],
-            ['Sangat Tinggi', 'T ≥ 65'],
-            ['Tinggi', '55 ≤ T < 65'],
-            ['Sedang', '45 ≤ T < 55'],
-            ['Rendah', '35 ≤ T < 45'],
-            ['Sangat Rendah', 'T < 35'],
+            ['Kategori', 'Range T-Score', 'Keterangan'],
+            ['Sangat Tinggi', 'T ≥ 65', 'Skor sangat tinggi'],
+            ['Tinggi', '55 ≤ T < 65', 'Skor tinggi'],
+            ['Sedang', '45 ≤ T < 55', 'Skor rata-rata'],
+            ['Rendah', '35 ≤ T < 45', 'Skor rendah'],
+            ['Sangat Rendah', 'T < 35', 'Skor sangat rendah'],
         ]
+
+        interpretasi_table = Table(interpretasi_data, colWidths=[4*cm, 4*cm, 7*cm])
         
-        interpretasi_table = Table(interpretasi_data, colWidths=[8*cm, 7*cm])
         interpretasi_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#c62828')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -1061,7 +1420,7 @@ def rekomendasi_kegiatan():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     
     # Prepare user data for template
     user_dict = {
@@ -1082,7 +1441,7 @@ def detail_hasil_tes():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     
     # Check if user has completed the test
     if user.status_tes != 'Selesai':
@@ -1208,6 +1567,90 @@ def detail_hasil_tes():
     }
     
     return render_template('detail_hasil_tes.html', user=user_dict, active_page='hasil_tes')
+@app.route('/api/register', methods=['POST'])
+def api_register():
+    try:
+        data = request.json
+        
+        # Validation
+        if not data.get('nim') or not data.get('nama') or not data.get('email'):
+            return jsonify({
+                'success': False,
+                'message': 'NIM, nama, dan email harus diisi'
+            }), 400
+        
+        if not data.get('username') or not data.get('password'):
+            return jsonify({
+                'success': False,
+                'message': 'Username dan password harus diisi'
+            }), 400
+        
+        # Check if user already exists
+        if User.query.filter_by(nim=data.get('nim')).first():
+            return jsonify({
+                'success': False,
+                'message': 'NIM sudah terdaftar'
+            }), 400
+        
+        if User.query.filter_by(email=data.get('email')).first():
+            return jsonify({
+                'success': False,
+                'message': 'Email sudah terdaftar'
+            }), 400
+        
+        if User.query.filter_by(username=data.get('username')).first():
+            return jsonify({
+                'success': False,
+                'message': 'Username sudah digunakan'
+            }), 400
+        
+        # Create new user
+        new_user = User(
+            nim=data.get('nim'),
+            nama=data.get('nama'),
+            email=data.get('email'),
+            username=data.get('username'),
+            fakultas=data.get('fakultas'),
+            is_admin=False
+        )
+        new_user.set_password(data.get('password'))
+        
+        db.session.add(new_user)
+        db.session.commit()
+        
+        # ✅ CREATE WELCOME NOTIFICATION for new user
+        create_notification(
+            user_id=new_user.id,
+            title='Selamat Datang di OmniMap! 👋',
+            message=f'Halo {new_user.nama}! Akun Anda berhasil dibuat. Silakan lengkapi profil dan ikuti Tes OMNI untuk mendapatkan rekomendasi kegiatan yang sesuai dengan kepribadian Anda.',
+            notification_type='info',
+            link='/dashboard'
+        )
+        
+        # ✅ NOTIFY ALL ADMINS about new user registration
+        admins = User.query.filter_by(is_admin=True).all()
+        for admin in admins:
+            create_notification(
+                user_id=admin.id,
+                title='User Baru Telah Mendaftar',
+                message=f'Mahasiswa baru telah mendaftar: {new_user.nama} ({new_user.nim}) dari {new_user.fakultas or "Fakultas belum diisi"}.',
+                notification_type='info',
+                link='/mahasiswa-rentan'
+            )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Registrasi berhasil',
+            'redirect': '/login'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Terjadi kesalahan: {str(e)}'
+        }), 500
+    
 
 @app.route('/api/recommended-activities', methods=['GET'])
 def api_recommended_activities():
@@ -1216,7 +1659,7 @@ def api_recommended_activities():
         return jsonify({'error': 'Unauthorized'}), 401
     
     try:
-        user = User.query.get(session['user_id'])
+        user = db.session.get(User, session['user_id'])
         
         if not user:
             return jsonify({'error': 'User not found'}), 404
@@ -1277,55 +1720,111 @@ def api_recommended_activities():
 def calculate_activity_match(user, activity):
     """Calculate how well an activity matches user's personality traits"""
     
-    if not activity.required_traits:
-        return 50  # Default match if no traits specified
+    # Default match percentage
+    default_match = 75
     
-    required_traits = [t.strip() for t in activity.required_traits.split(',')]
-    
-    # Trait mapping to user attributes
-    trait_mapping = {
-        'extraversion': 'extraversion_t',
-        'agreeableness': 'agreeableness_t',
-        'conscientiousness': 'conscientiousness_t',
-        'neuroticism': 'neuroticism_t',
-        'openness': 'openness_t',
-        'leadership': 'assertiveness_t',
-        'creativity': 'aestheticism_t',
-        'teamwork': 'agreeableness_t',
-        'organization': 'orderliness_t',
-        'communication': 'sociability_t',
-        'aestheticism': 'aestheticism_t',
-        'flexibility': 'flexibility_t'
-    }
-    
-    total_score = 0
-    matched_traits = 0
-    
-    for trait in required_traits:
-        trait_lower = trait.lower()
-        if trait_lower in trait_mapping:
-            user_trait_attr = trait_mapping[trait_lower]
-            user_trait_value = getattr(user, user_trait_attr, 50)
+    try:
+        # Check if user and activity exist
+        if not user or not activity:
+            return default_match
+        
+        # Check if activity has required_traits
+        if not hasattr(activity, 'required_traits') or not activity.required_traits:
+            return default_match
+        
+        # Parse required_traits (bisa string atau dict/list)
+        required_traits = []
+        if isinstance(activity.required_traits, str):
+            # Coba parse sebagai JSON dulu
+            try:
+                parsed = json.loads(activity.required_traits)
+                if isinstance(parsed, dict):
+                    required_traits = list(parsed.keys())
+                elif isinstance(parsed, list):
+                    required_traits = parsed
+                else:
+                    required_traits = [t.strip() for t in activity.required_traits.split(',') if t.strip()]
+            except:
+                # Jika bukan JSON, split by comma
+                required_traits = [t.strip() for t in activity.required_traits.split(',') if t.strip()]
+        elif isinstance(activity.required_traits, (list, dict)):
+            required_traits = list(activity.required_traits.keys() if isinstance(activity.required_traits, dict) else activity.required_traits)
+        
+        if not required_traits:
+            return default_match
+        
+        # Trait mapping to user attributes
+        trait_mapping = {
+            'extraversion': 'extraversion_t',
+            'agreeableness': 'agreeableness_t',
+            'conscientiousness': 'conscientiousness_t',
+            'neuroticism': 'neuroticism_t',
+            'openness': 'openness_t',
+            'leadership': 'assertiveness_t',
+            'creativity': 'aestheticism_t',
+            'teamwork': 'agreeableness_t',
+            'organization': 'orderliness_t',
+            'communication': 'sociability_t',
+            'aestheticism': 'aestheticism_t',
+            'flexibility': 'flexibility_t',
+            'assertiveness': 'assertiveness_t',
+            'sociability': 'sociability_t',
+            'orderliness': 'orderliness_t'
+        }
+        
+        total_score = 0
+        matched_traits = 0
+        
+        for trait in required_traits:
+            trait_lower = str(trait).lower().strip()
             
-            # Normalize score to 0-100 range (T-scores are typically 20-80)
-            normalized_score = ((user_trait_value - 20) / 60) * 100
-            normalized_score = max(0, min(100, normalized_score))
-            
-            total_score += normalized_score
-            matched_traits += 1
-    
-    # Calculate average match percentage
-    if matched_traits > 0:
-        match_percentage = int(total_score / matched_traits)
-    else:
-        match_percentage = 50
-    
-    # Add bonus for high openness (generally good for trying new activities)
-    if hasattr(user, 'openness_t') and user.openness_t:
-        openness_bonus = int((user.openness_t - 50) / 10)
-        match_percentage = min(100, match_percentage + openness_bonus)
-    
-    return match_percentage
+            if trait_lower in trait_mapping:
+                user_trait_attr = trait_mapping[trait_lower]
+                
+                # Get user trait value with None check
+                user_trait_value = getattr(user, user_trait_attr, None)
+                
+                # Skip if value is None
+                if user_trait_value is None:
+                    continue
+                
+                try:
+                    # Convert to float for safety
+                    user_trait_value = float(user_trait_value)
+                    
+                    # Normalize score to 0-100 range (T-scores are typically 20-80)
+                    normalized_score = ((user_trait_value - 20) / 60) * 100
+                    normalized_score = max(0, min(100, normalized_score))
+                    
+                    total_score += normalized_score
+                    matched_traits += 1
+                except (ValueError, TypeError):
+                    # Skip if conversion fails
+                    continue
+        
+        # Calculate average match percentage
+        if matched_traits > 0:
+            match_percentage = int(total_score / matched_traits)
+        else:
+            match_percentage = default_match
+        
+        # Add bonus for high openness (generally good for trying new activities)
+        try:
+            if hasattr(user, 'openness_t') and user.openness_t is not None:
+                openness_value = float(user.openness_t)
+                openness_bonus = int((openness_value - 50) / 10)
+                match_percentage = min(100, match_percentage + openness_bonus)
+        except (ValueError, TypeError):
+            pass  # Skip bonus if conversion fails
+        
+        # Ensure match percentage is within valid range
+        match_percentage = max(0, min(100, match_percentage))
+        
+        return match_percentage
+        
+    except Exception as e:
+        print(f"Error calculating activity match: {str(e)}")
+        return default_match
 
 @app.route('/api/activity/<int:activity_id>', methods=['GET'])
 def api_get_activity_detail(activity_id):
@@ -1334,7 +1833,7 @@ def api_get_activity_detail(activity_id):
         return jsonify({'error': 'Unauthorized'}), 401
     
     try:
-        user = User.query.get(session['user_id'])
+        user = db.session.get(User, session['user_id'])
         activity = Activity.query.get(activity_id)
         
         if not activity:
@@ -1433,7 +1932,7 @@ def api_logout():
 @app.route('/api/check-session', methods=['GET'])
 def api_check_session():
     if 'user_id' in session:
-        user = User.query.get(session['user_id'])
+        user = db.session.get(User, session['user_id'])
         return jsonify({
             'logged_in': True,
             'user': {
@@ -1450,7 +1949,7 @@ def api_get_profile():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     return jsonify({
         'id': user.id,
         'nim': user.nim,
@@ -1476,7 +1975,7 @@ def kegiatan_detail(activity_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     activity = Activity.query.get(activity_id)
     
     if not activity:
@@ -1582,13 +2081,12 @@ def api_get_activities():
         'deskripsi': a.deskripsi
     } for a in activities])
 
-
 @app.route('/api/add-activity', methods=['POST'])
 def api_add_activity():
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user or not user.is_admin:
         return jsonify({'success': False, 'message': 'Admin access required'}), 403
     
@@ -1598,6 +2096,9 @@ def api_add_activity():
         # Validate required fields
         if not data.get('kategori') or not data.get('nama'):
             return jsonify({'success': False, 'message': 'Kategori dan nama kegiatan harus diisi'}), 400
+        
+        if not data.get('required_traits'):
+            return jsonify({'success': False, 'message': 'Trait kepribadian harus dipilih'}), 400
         
         import json
         
@@ -1609,15 +2110,36 @@ def api_add_activity():
             deadline=data.get('deadline', ''),
             peserta=data.get('peserta', ''),
             lokasi=data.get('lokasi', ''),
-            persyaratan_json=json.dumps([data.get('persyaratan', '')]) if data.get('persyaratan') else None,
-            manfaat_json=json.dumps([data.get('manfaat', '')]) if data.get('manfaat') else None,
+            required_traits=data.get('required_traits', ''),
+            persyaratan_json=json.dumps(data.get('persyaratan', [])) if data.get('persyaratan') else None,
+            manfaat_json=json.dumps(data.get('manfaat', [])) if data.get('manfaat') else None,
             jadwal_json=json.dumps({'tanggal': data.get('jadwal', '')}) if data.get('jadwal') else None,
             link=data.get('link', ''),
-            contact_json=json.dumps({'info': data.get('kontak', '')}) if data.get('kontak') else None
+            contact_json=json.dumps(data.get('kontak', {})) if data.get('kontak') else None
         )
         
         db.session.add(new_activity)
         db.session.commit()
+        
+        # ✅ NOTIFY ALL USERS who completed test about new activity
+        users_with_test = User.query.filter_by(
+            is_admin=False,
+            status_tes='Selesai'
+        ).all()
+        
+        for user_notif in users_with_test:
+            # Calculate match score
+            match_score = calculate_activity_match(user_notif, new_activity)
+            
+            # Only notify if match score is high (>= 70%)
+            if match_score >= 70:
+                create_notification(
+                    user_id=user_notif.id,
+                    title='Kegiatan Baru Cocok untuk Anda! ✨',
+                    message=f'Ada kegiatan baru "{new_activity.nama}" yang sangat cocok dengan kepribadian Anda (Match: {match_score}%). Lihat detailnya sekarang!',
+                    notification_type='info',
+                    link=f'/kegiatan/{new_activity.id}'
+                )
         
         return jsonify({
             'success': True,
@@ -1632,7 +2154,235 @@ def api_add_activity():
             'message': f'Terjadi kesalahan: {str(e)}'
         }), 500
 
+@app.route('/api/notifications', methods=['GET'])
+def api_get_notifications():
+    """Get user notifications"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        user_id = session['user_id']
+        
+        # Get unread count
+        unread_count = Notification.query.filter_by(
+            user_id=user_id, 
+            is_read=False
+        ).count()
+        
+        # Get recent notifications (last 10)
+        notifications = Notification.query.filter_by(
+            user_id=user_id
+        ).order_by(Notification.created_at.desc()).limit(10).all()
+        
+        notifications_data = [{
+            'id': n.id,
+            'title': n.title,
+            'message': n.message,
+            'type': n.type,
+            'is_read': n.is_read,
+            'link': n.link,
+            'created_at': n.created_at.strftime('%d %b %Y'),
+            'time_ago': get_time_ago(n.created_at)
+        } for n in notifications]
+        
+        return jsonify({
+            'success': True,
+            'unread_count': unread_count,
+            'notifications': notifications_data
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
+@app.route('/api/notifications/mark-read', methods=['POST'])
+def api_mark_notification_read():
+    """Mark notification as read"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.json
+        notification_id = data.get('notification_id')
+        
+        notification = Notification.query.get(notification_id)
+        
+        if not notification:
+            return jsonify({'success': False, 'error': 'Notification not found'}), 404
+        
+        if notification.user_id != session['user_id']:
+            return jsonify({'success': False, 'error': 'Forbidden'}), 403
+        
+        notification.is_read = True
+        db.session.commit()
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/notifications/mark-all-read', methods=['POST'])
+def api_mark_all_read():
+    """Mark all notifications as read"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        Notification.query.filter_by(
+            user_id=session['user_id'],
+            is_read=False
+        ).update({'is_read': True})
+        
+        db.session.commit()
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def get_time_ago(date):
+    """Helper function to get relative time"""
+    now = datetime.utcnow()
+    diff = now - date
+    
+    seconds = diff.total_seconds()
+    
+    if seconds < 60:
+        return 'Baru saja'
+    elif seconds < 3600:
+        minutes = int(seconds / 60)
+        return f'{minutes} menit lalu'
+    elif seconds < 86400:
+        hours = int(seconds / 3600)
+        return f'{hours} jam lalu'
+    else:
+        days = int(seconds / 86400)
+        return f'{days} hari lalu'
+
+# Helper function untuk create notification
+def create_notification(user_id, title, message, notification_type='info', link=None):
+    """Helper to create notification"""
+    try:
+        notification = Notification(
+            user_id=user_id,
+            title=title,
+            message=message,
+            type=notification_type,
+            link=link
+        )
+        db.session.add(notification)
+        db.session.commit()
+        return True
+    except Exception as e:
+        print(f"Error creating notification: {e}")
+        db.session.rollback()
+        return False
+
+@app.route('/api/edit-activity', methods=['POST'])
+def api_edit_activity():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    user = db.session.get(User, session['user_id'])
+    if not user or not user.is_admin:
+        return jsonify({'success': False, 'message': 'Admin access required'}), 403
+    
+    try:
+        data = request.json
+        activity_id = data.get('id')
+        
+        # Validate required fields
+        if not activity_id:
+            return jsonify({'success': False, 'message': 'ID kegiatan tidak ditemukan'}), 400
+            
+        if not data.get('kategori') or not data.get('nama'):
+            return jsonify({'success': False, 'message': 'Kategori dan nama kegiatan harus diisi'}), 400
+        
+        # Get existing activity
+        activity = db.session.get(Activity, activity_id)
+        if not activity:
+            return jsonify({'success': False, 'message': 'Kegiatan tidak ditemukan'}), 404
+        
+        import json
+        
+        # Update activity fields
+        activity.nama = data.get('nama')
+        activity.kategori = data.get('kategori')
+        activity.deskripsi = data.get('deskripsi', '')
+        activity.deadline = data.get('deadline', '')
+        activity.peserta = data.get('peserta', '')
+        activity.lokasi = data.get('lokasi', '')
+        activity.link = data.get('link', '')
+        
+        # Update JSON fields
+        if data.get('persyaratan'):
+            activity.persyaratan_json = json.dumps(data.get('persyaratan'))
+        
+        if data.get('manfaat'):
+            activity.manfaat_json = json.dumps(data.get('manfaat'))
+        
+        if data.get('jadwal'):
+            activity.jadwal_json = json.dumps({'tanggal': data.get('jadwal')})
+        
+        if data.get('kontak'):
+            activity.contact_json = json.dumps(data.get('kontak'))
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Kegiatan berhasil diperbarui'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Terjadi kesalahan: {str(e)}'
+        }), 500
+
+
+@app.route('/api/delete-activity', methods=['POST'])
+def api_delete_activity():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    user = db.session.get(User, session['user_id'])
+    if not user or not user.is_admin:
+        return jsonify({'success': False, 'message': 'Admin access required'}), 403
+    
+    try:
+        data = request.json
+        activity_id = data.get('id')
+        
+        # Validate ID
+        if not activity_id:
+            return jsonify({'success': False, 'message': 'ID kegiatan tidak ditemukan'}), 400
+        
+        # Get activity
+        activity = db.session.get(Activity, activity_id)
+        if not activity:
+            return jsonify({'success': False, 'message': 'Kegiatan tidak ditemukan'}), 404
+        
+        # Delete activity
+        db.session.delete(activity)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Kegiatan berhasil dihapus'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Terjadi kesalahan: {str(e)}'
+        }), 500
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.Text, nullable=False)
@@ -1656,17 +2406,17 @@ class TestSession(db.Model):
     time_taken = db.Column(db.Integer)  # in seconds
     status = db.Column(db.String(50), default='in_progress')  # in_progress, completed
 
-# Update tes_omni route
 @app.route('/tes-omni')
 def tes_omni():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     
     # Check if user already completed the test
     if user.status_tes == 'Selesai':
-        return redirect(url_for('hasil_tes'))
+        # Show modal that user already completed test
+        return render_template('tes_omni_completed.html', user=user, active_page='tes_omni')
     
     # Get all questions ordered
     questions = Question.query.order_by(Question.order).all()
@@ -1682,7 +2432,8 @@ def tes_omni():
     return render_template('tes_omni.html', 
                          user=user, 
                          questions=questions_data,
-                         total_questions=len(questions_data), active_page='tes_omni')
+                         total_questions=len(questions_data), 
+                         active_page='tes_omni')
 
 # API endpoint to submit test
 @app.route('/api/submit-test', methods=['POST'])
@@ -1737,6 +2488,15 @@ def api_submit_test():
         user.progress_tes = 100
         
         db.session.commit()
+        
+        # ✅ CREATE NOTIFICATION after test completion
+        create_notification(
+            user_id=user.id,
+            title='Tes OMNI Berhasil Diselesaikan! 🎉',
+            message=f'Selamat {user.nama}! Anda telah menyelesaikan Tes OMNI. Lihat hasil kepribadian Anda sekarang untuk mengetahui rekomendasi kegiatan yang cocok.',
+            notification_type='success',
+            link='/hasil-tes'
+        )
         
         return jsonify({
             'success': True,
@@ -1797,6 +2557,73 @@ def api_save_progress():
         return jsonify({
             'success': False,
             'message': f'Terjadi kesalahan: {str(e)}'
+        }), 500
+
+# ===== TAMBAHKAN SETELAH FUNGSI api_save_progress =====
+
+@app.route('/api/auto-save-progress', methods=['POST'])
+def api_auto_save_progress():
+    """Auto-save test progress setiap user menjawab pertanyaan"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    try:
+        data = request.json
+        user_id = session['user_id']
+        answers = data.get('answers', {})
+        current_question = data.get('current_question', 0)
+        
+        # Hitung progress berdasarkan jumlah jawaban
+        total_questions = Question.query.count()
+        if total_questions > 0:
+            progress = int((len(answers) / total_questions) * 100)
+            
+            # Update user progress
+            user = User.query.get(user_id)
+            if user:
+                user.progress_tes = min(progress, 99)  # Max 99% sampai submit
+                db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'progress': progress,
+            'answers_saved': len(answers)
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Auto-save gagal: {str(e)}'
+        }), 500
+
+@app.route('/api/load-saved-answers', methods=['GET'])
+def api_load_saved_answers():
+    """Load jawaban yang tersimpan untuk melanjutkan tes"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    try:
+        user_id = session['user_id']
+        
+        # Get saved answers
+        saved_answers = TestAnswer.query.filter_by(user_id=user_id).all()
+        
+        # Format answers
+        answers = {}
+        for answer in saved_answers:
+            answers[str(answer.question_id)] = answer.answer
+        
+        return jsonify({
+            'success': True,
+            'answers': answers,
+            'has_saved_progress': len(answers) > 0
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Load gagal: {str(e)}'
         }), 500
 
 # Helper function to calculate personality scores
@@ -1969,13 +2796,164 @@ def init_questions():
     print("Questions initialized successfully!")
 
 #ADMIN
+# Tambahkan di app.py setelah class TestSession
+
+class CriticalItem(db.Model):
+    """Track critical items untuk identifikasi mahasiswa rentan"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    category = db.Column(db.String(100), nullable=False)  # suicidal, substance_abuse, mood_disturbance, anger
+    severity = db.Column(db.String(50))  # low, medium, high, critical
+    score = db.Column(db.Float)  # calculated score
+    flags = db.Column(db.Text)  # JSON string of specific flags
+    assessed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref='critical_items')
+
+
+def assess_critical_items(user):
+    """
+    Assess critical items untuk menentukan apakah mahasiswa rentan
+    Returns: dict dengan kategori dan severity
+    """
+    assessment = {
+        'is_vulnerable': False,
+        'risk_level': 'low',  # low, medium, high, critical
+        'categories': [],
+        'flags': [],
+        'overall_score': 0
+    }
+    
+    risk_score = 0
+    
+    # 1. SUICIDAL AND SELF-DAMAGING BEHAVIOR (PRIORITAS TERTINGGI)
+    suicidal_flags = []
+    if user.depression_t and user.depression_t >= 70:
+        suicidal_flags.append('Depression sangat tinggi (T≥70)')
+        risk_score += 25
+    if user.anxiety_t and user.anxiety_t >= 70:
+        suicidal_flags.append('Anxiety sangat tinggi (T≥70)')
+        risk_score += 20
+    if user.hostility_t and user.hostility_t >= 70:
+        suicidal_flags.append('Hostility tinggi - potensi self-harm')
+        risk_score += 15
+    
+    # Kombinasi berbahaya
+    if (user.depression_t and user.depression_t >= 65 and 
+        user.anxiety_t and user.anxiety_t >= 65):
+        suicidal_flags.append('CRITICAL: Kombinasi Depression + Anxiety tinggi')
+        risk_score += 30
+    
+    if suicidal_flags:
+        assessment['categories'].append({
+            'name': 'Suicidal & Self-Damaging Behavior',
+            'severity': 'critical' if risk_score >= 40 else 'high',
+            'flags': suicidal_flags
+        })
+    
+    # 2. MOOD AND ANXIETY DISTURBANCES
+    mood_flags = []
+    if user.moodiness_t and user.moodiness_t >= 65:
+        mood_flags.append(f'Moodiness sangat tinggi ({user.moodiness_t:.1f})')
+        risk_score += 10
+    if user.irritability_t and user.irritability_t >= 65:
+        mood_flags.append(f'Irritability tinggi ({user.irritability_t:.1f})')
+        risk_score += 8
+    if user.neuroticism_t and user.neuroticism_t >= 70:
+        mood_flags.append('Neuroticism sangat tinggi - ketidakstabilan emosi')
+        risk_score += 12
+    
+    if mood_flags:
+        assessment['categories'].append({
+            'name': 'Mood & Anxiety Disturbances',
+            'severity': 'high' if risk_score >= 20 else 'medium',
+            'flags': mood_flags
+        })
+    
+    # 3. ANGER AND IMPULSIVENESS
+    anger_flags = []
+    if user.hostility_t and user.hostility_t >= 65:
+        anger_flags.append(f'Hostility tinggi ({user.hostility_t:.1f})')
+        risk_score += 8
+    if user.impulsiveness_t and user.impulsiveness_t >= 65:
+        anger_flags.append(f'Impulsiveness tinggi ({user.impulsiveness_t:.1f})')
+        risk_score += 7
+    
+    # Kombinasi berbahaya: Hostility + Impulsiveness
+    if (user.hostility_t and user.hostility_t >= 60 and
+        user.impulsiveness_t and user.impulsiveness_t >= 60):
+        anger_flags.append('PERINGATAN: Kombinasi Hostility + Impulsiveness')
+        risk_score += 10
+    
+    if anger_flags:
+        assessment['categories'].append({
+            'name': 'Anger & Impulsiveness',
+            'severity': 'high' if risk_score >= 15 else 'medium',
+            'flags': anger_flags
+        })
+    
+    # 4. SOCIAL ISOLATION (indikator tambahan)
+    isolation_flags = []
+    if user.sociability_t and user.sociability_t <= 35:
+        isolation_flags.append('Sociability sangat rendah - isolasi sosial')
+        risk_score += 8
+    if user.warmth_t and user.warmth_t <= 35:
+        isolation_flags.append('Warmth rendah - kesulitan koneksi emosional')
+        risk_score += 5
+    
+    if isolation_flags and (user.depression_t and user.depression_t >= 60):
+        isolation_flags.append('PERINGATAN: Isolasi sosial + Depression')
+        risk_score += 10
+    
+    if isolation_flags:
+        assessment['categories'].append({
+            'name': 'Social Isolation',
+            'severity': 'medium',
+            'flags': isolation_flags
+        })
+    
+    # 5. LOW SELF-RELIANCE & COPING
+    coping_flags = []
+    if user.self_reliance_t and user.self_reliance_t <= 35:
+        coping_flags.append('Self-reliance sangat rendah')
+        risk_score += 6
+    if user.dutifulness_t and user.dutifulness_t <= 35:
+        coping_flags.append('Dutifulness rendah - kesulitan tanggung jawab')
+        risk_score += 4
+    
+    if coping_flags:
+        assessment['categories'].append({
+            'name': 'Low Coping Skills',
+            'severity': 'medium',
+            'flags': coping_flags
+        })
+    
+    # DETERMINE OVERALL RISK LEVEL
+    assessment['overall_score'] = risk_score
+    
+    if risk_score >= 50:
+        assessment['risk_level'] = 'critical'
+        assessment['is_vulnerable'] = True
+    elif risk_score >= 35:
+        assessment['risk_level'] = 'high'
+        assessment['is_vulnerable'] = True
+    elif risk_score >= 20:
+        assessment['risk_level'] = 'medium'
+        assessment['is_vulnerable'] = True
+    else:
+        assessment['risk_level'] = 'low'
+        assessment['is_vulnerable'] = False
+    
+    return assessment
+
+
 @app.route('/api/mahasiswa-rentan', methods=['GET'])
 def api_mahasiswa_rentan():
-    """Get list of vulnerable students for admin dashboard"""
+    """Get list of vulnerable students based on critical items assessment"""
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user.is_admin:
         return jsonify({'error': 'Forbidden'}), 403
     
@@ -1983,11 +2961,12 @@ def api_mahasiswa_rentan():
         # Get query parameters
         angkatan = request.args.get('angkatan', '')
         search = request.args.get('search', '')
+        risk_filter = request.args.get('risk_level', '')  # critical, high, medium
         
         # Base query - mahasiswa with completed tests
         query = User.query.filter_by(is_admin=False, status_tes='Selesai')
         
-        # Filter by angkatan (assuming NIM starts with year)
+        # Filter by angkatan
         if angkatan:
             query = query.filter(User.nim.like(f'{angkatan}%'))
         
@@ -1999,43 +2978,79 @@ def api_mahasiswa_rentan():
                 (User.nim.like(search_pattern))
             )
         
-        # Get vulnerable students (high neuroticism or specific traits)
-        mahasiswa = query.filter(
-            (User.neuroticism_t >= 60) |  # High neuroticism
-            (User.anxiety_t >= 60) |      # High anxiety
-            (User.depression_t >= 60)     # High depression
-        ).order_by(User.neuroticism_t.desc()).all()
+        # Get all students who completed test
+        all_students = query.all()
+        
+        # Assess each student and filter vulnerable ones
+        vulnerable_students = []
+        
+        for student in all_students:
+            assessment = assess_critical_items(student)
+            
+            # Only include if vulnerable
+            if assessment['is_vulnerable']:
+                # Apply risk level filter if specified
+                if risk_filter and assessment['risk_level'] != risk_filter:
+                    continue
+                
+                vulnerable_students.append({
+                    'student': student,
+                    'assessment': assessment
+                })
+        
+        # Sort by risk score (highest first)
+        vulnerable_students.sort(key=lambda x: x['assessment']['overall_score'], reverse=True)
         
         # Calculate statistics
         total_mahasiswa = User.query.filter_by(is_admin=False).count()
         sudah_omni = User.query.filter_by(is_admin=False, status_tes='Selesai').count()
         belum_omni = total_mahasiswa - sudah_omni
         
+        # Count by risk level
+        critical_count = len([s for s in vulnerable_students if s['assessment']['risk_level'] == 'critical'])
+        high_count = len([s for s in vulnerable_students if s['assessment']['risk_level'] == 'high'])
+        medium_count = len([s for s in vulnerable_students if s['assessment']['risk_level'] == 'medium'])
+        
         # Format mahasiswa data
         mahasiswa_data = []
-        for idx, m in enumerate(mahasiswa, 1):
-            # Determine category based on neuroticism score
-            if m.neuroticism_t >= 70:
-                kategori = 'Tinggi'
+        for idx, item in enumerate(vulnerable_students, 1):
+            student = item['student']
+            assessment = item['assessment']
+            
+            # Determine category display
+            risk_level = assessment['risk_level']
+            if risk_level == 'critical':
+                kategori = 'Sangat Rentan'
+                kategori_class = 'badge-critical'
+            elif risk_level == 'high':
+                kategori = 'Rentan Tinggi'
                 kategori_class = 'badge-high'
-            elif m.neuroticism_t >= 60:
-                kategori = 'Sedang'
+            elif risk_level == 'medium':
+                kategori = 'Rentan Sedang'
                 kategori_class = 'badge-medium'
             else:
-                kategori = 'Rendah'
+                kategori = 'Perhatian'
                 kategori_class = 'badge-low'
+            
+            # Get primary concern
+            primary_concern = ''
+            if assessment['categories']:
+                primary_concern = assessment['categories'][0]['name']
             
             mahasiswa_data.append({
                 'no': idx,
-                'nim': m.nim,
-                'nama': m.nama,
-                'fakultas': m.fakultas or 'N/A',
-                'program_studi': 'Informatika',  # Add this field to User model if needed
-                'skor_omni': round(m.neuroticism_t, 0) if m.neuroticism_t else 0,
+                'nim': student.nim,
+                'nama': student.nama,
+                'fakultas': student.fakultas or 'N/A',
+                'program_studi': 'Informatika',
+                'risk_score': assessment['overall_score'],
                 'kategori': kategori,
                 'kategori_class': kategori_class,
-                'anxiety_t': round(m.anxiety_t, 1) if m.anxiety_t else 0,
-                'depression_t': round(m.depression_t, 1) if m.depression_t else 0
+                'primary_concern': primary_concern,
+                'categories': assessment['categories'],
+                'depression_t': round(student.depression_t, 1) if student.depression_t else 0,
+                'anxiety_t': round(student.anxiety_t, 1) if student.anxiety_t else 0,
+                'hostility_t': round(student.hostility_t, 1) if student.hostility_t else 0
             })
         
         return jsonify({
@@ -2043,7 +3058,11 @@ def api_mahasiswa_rentan():
             'stats': {
                 'total_mahasiswa': total_mahasiswa,
                 'sudah_omni': sudah_omni,
-                'belum_omni': belum_omni
+                'belum_omni': belum_omni,
+                'total_rentan': len(vulnerable_students),
+                'critical_count': critical_count,
+                'high_count': high_count,
+                'medium_count': medium_count
             },
             'mahasiswa': mahasiswa_data,
             'total': len(mahasiswa_data)
@@ -2051,18 +3070,55 @@ def api_mahasiswa_rentan():
         
     except Exception as e:
         print(f"Error getting mahasiswa rentan: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'success': False,
             'error': f'Terjadi kesalahan: {str(e)}'
         }), 500
 
+
+@app.route('/api/mahasiswa-detail/<int:user_id>', methods=['GET'])
+def api_mahasiswa_detail(user_id):
+    """Get detailed assessment for a specific student"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    admin = db.session.get(User, session['user_id'])
+    if not admin.is_admin:
+        return jsonify({'error': 'Forbidden'}), 403
+    
+    try:
+        student = User.query.get(user_id)
+        if not student:
+            return jsonify({'error': 'Student not found'}), 404
+        
+        assessment = assess_critical_items(student)
+        
+        return jsonify({
+            'success': True,
+            'student': {
+                'nim': student.nim,
+                'nama': student.nama,
+                'fakultas': student.fakultas,
+                'email': student.email
+            },
+            'assessment': assessment
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+    
 @app.route('/api/export-mahasiswa-rentan', methods=['GET'])
 def api_export_mahasiswa_rentan():
     """Export vulnerable students data to CSV"""
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user.is_admin:
         return jsonify({'error': 'Forbidden'}), 403
     
@@ -2071,12 +3127,48 @@ def api_export_mahasiswa_rentan():
         from io import StringIO
         from flask import make_response
         
-        # Get vulnerable students
-        mahasiswa = User.query.filter_by(is_admin=False, status_tes='Selesai').filter(
-            (User.neuroticism_t >= 60) |
-            (User.anxiety_t >= 60) |
-            (User.depression_t >= 60)
-        ).all()
+        # Get query parameters (sama seperti di api_mahasiswa_rentan)
+        angkatan = request.args.get('angkatan', '')
+        search = request.args.get('search', '')
+        risk_filter = request.args.get('risk_level', '')
+        
+        # Base query - mahasiswa with completed tests
+        query = User.query.filter_by(is_admin=False, status_tes='Selesai')
+        
+        # Filter by angkatan
+        if angkatan:
+            query = query.filter(User.nim.like(f'{angkatan}%'))
+        
+        # Search filter
+        if search:
+            search_pattern = f'%{search}%'
+            query = query.filter(
+                (User.nama.like(search_pattern)) |
+                (User.nim.like(search_pattern))
+            )
+        
+        # Get all students who completed test
+        all_students = query.all()
+        
+        # Assess each student and filter vulnerable ones
+        vulnerable_students = []
+        
+        for student in all_students:
+            assessment = assess_critical_items(student)
+            
+            # Only include if vulnerable
+            if assessment['is_vulnerable']:
+                # Apply risk level filter if specified
+                if risk_filter and assessment['risk_level'] != risk_filter:
+                    continue
+                
+                vulnerable_students.append({
+                    'student': student,
+                    'assessment': assessment
+                })
+        
+        # Sort by risk score (highest first)
+        vulnerable_students.sort(key=lambda x: x['assessment']['overall_score'], reverse=True)
         
         # Create CSV
         si = StringIO()
@@ -2084,37 +3176,55 @@ def api_export_mahasiswa_rentan():
         
         # Write header
         writer.writerow(['No', 'NIM', 'Nama', 'Fakultas', 'Program Studi', 
-                        'Skor OMNI', 'Kategori', 'Anxiety', 'Depression'])
+                        'Risk Score', 'Kategori', 'Primary Concern', 'Depression T-Score', 
+                        'Anxiety T-Score', 'Hostility T-Score'])
         
         # Write data
-        for idx, m in enumerate(mahasiswa, 1):
-            if m.neuroticism_t >= 70:
-                kategori = 'Tinggi'
-            elif m.neuroticism_t >= 60:
-                kategori = 'Sedang'
+        for idx, item in enumerate(vulnerable_students, 1):
+            student = item['student']
+            assessment = item['assessment']
+            
+            # Determine category display
+            risk_level = assessment['risk_level']
+            if risk_level == 'critical':
+                kategori = 'Sangat Rentan'
+            elif risk_level == 'high':
+                kategori = 'Rentan Tinggi'
+            elif risk_level == 'medium':
+                kategori = 'Rentan Sedang'
             else:
-                kategori = 'Rendah'
+                kategori = 'Perhatian'
+            
+            # Get primary concern
+            primary_concern = ''
+            if assessment['categories']:
+                primary_concern = assessment['categories'][0]['name']
             
             writer.writerow([
                 idx,
-                m.nim,
-                m.nama,
-                m.fakultas or 'N/A',
+                student.nim,
+                student.nama,
+                student.fakultas or 'N/A',
                 'Informatika',
-                round(m.neuroticism_t, 0) if m.neuroticism_t else 0,
+                assessment['overall_score'],
                 kategori,
-                round(m.anxiety_t, 1) if m.anxiety_t else 0,
-                round(m.depression_t, 1) if m.depression_t else 0
+                primary_concern,
+                round(student.depression_t, 1) if student.depression_t else 0,
+                round(student.anxiety_t, 1) if student.anxiety_t else 0,
+                round(student.hostility_t, 1) if student.hostility_t else 0
             ])
         
         # Create response
         output = make_response(si.getvalue())
-        output.headers["Content-Disposition"] = "attachment; filename=mahasiswa_rentan.csv"
-        output.headers["Content-type"] = "text/csv"
+        output.headers["Content-Disposition"] = f"attachment; filename=mahasiswa_rentan_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        output.headers["Content-type"] = "text/csv; charset=utf-8"
         
         return output
         
     except Exception as e:
+        print(f"Error exporting: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'success': False,
             'error': f'Terjadi kesalahan: {str(e)}'
@@ -2125,7 +3235,7 @@ def mahasiswa_rentan():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user.is_admin:
         return redirect(url_for('dashboard'))
     
@@ -2143,7 +3253,7 @@ def admin_daftar_kegiatan():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user.is_admin:
         return redirect(url_for('dashboard'))
     
@@ -2177,7 +3287,7 @@ def admin_profile():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user.is_admin:
         return redirect(url_for('dashboard'))
     
@@ -2192,6 +3302,81 @@ def admin_profile():
     }
     
     return render_template('admin_profile.html', user=user_dict, active_page='profile')
+
+try:
+    from api.ml_routes import ml_bp
+    app.register_blueprint(ml_bp)
+    print("✅ ML routes registered successfully")
+except ImportError as e:
+    print(f"⚠️ ML routes not available: {e}")
+except Exception as e:
+    print(f"⚠️ Error registering ML routes: {e}")
+
+@app.route('/admin/kegiatan/<int:activity_id>')
+def admin_kegiatan_detail(activity_id):
+    """Detail kegiatan untuk admin"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user = db.session.get(User, session['user_id'])
+    if not user or not user.is_admin:
+        return redirect(url_for('dashboard'))
+
+    activity = Activity.query.get(activity_id)
+    if not activity:
+        return render_template('404.html'), 404
+
+    match_percentage = calculate_activity_match(user, activity)
+
+    activity_dict = {
+        'id': activity.id,
+        'nama': activity.nama,
+        'kategori': activity.kategori,
+        'tingkat_kesulitan': activity.tingkat_kesulitan,
+        'peserta': activity.peserta,
+        'deadline': activity.deadline,
+        'lokasi': activity.lokasi,
+        'deskripsi': activity.deskripsi,
+        'match_percentage': match_percentage,
+        'required_traits': activity.required_traits,
+    }
+
+    try:
+        if hasattr(activity, 'persyaratan_json'):
+            activity_dict['persyaratan'] = json.loads(activity.persyaratan_json) if activity.persyaratan_json else []
+        else:
+            activity_dict['persyaratan'] = []
+
+        if hasattr(activity, 'manfaat_json'):
+            activity_dict['manfaat'] = json.loads(activity.manfaat_json) if activity.manfaat_json else []
+        else:
+            activity_dict['manfaat'] = []
+
+        if hasattr(activity, 'jadwal_json'):
+            activity_dict['jadwal'] = json.loads(activity.jadwal_json) if activity.jadwal_json else []
+        else:
+            activity_dict['jadwal'] = []
+
+        activity_dict['link'] = activity.link if hasattr(activity, 'link') else '#'
+
+        if hasattr(activity, 'contact_json'):
+            activity_dict['contact'] = json.loads(activity.contact_json) if activity.contact_json else None
+        else:
+            activity_dict['contact'] = None
+    except Exception as e:
+        print(f"Error parsing activity data (admin detail): {str(e)}")
+        activity_dict['persyaratan'] = []
+        activity_dict['manfaat'] = []
+        activity_dict['jadwal'] = []
+        activity_dict['link'] = '#'
+        activity_dict['contact'] = None
+
+    return render_template(
+        'admin_detailkegiatan.html',
+        activity=activity_dict,
+        user=user,
+        active_page='daftar_kegiatan'
+    )
 
 try:
     from api.ml_routes import ml_bp
@@ -2232,3 +3417,4 @@ if __name__ == '__main__':
     print("="*60 + "\n")
     
     app.run(debug=True, port=5000)
+    

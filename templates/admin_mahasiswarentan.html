@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="id">
   <head>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo-head.svg') }}">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OMNIMAP - Mahasiswa Rentan</title>
@@ -22,6 +23,11 @@
             src="{{ url_for('static', filename='img/logo.svg') }}"
             class="omnimap-logo-full"
             alt="OmniMap Logo"
+          />
+          <img
+          src="{{ url_for('static', filename='img/logo-head.svg') }}"
+          class="omnimap-logo-collapsed"
+          alt="OmniMap Logo"
           />
         </a>
         <i class="bi bi-list toggle-sidebar sidebar-hamburger"></i>
@@ -63,22 +69,34 @@
         <i class="bi bi-list toggle-sidebar nav-hamburger"></i>
 
         <div class="navbar-right">
-          <img src="{{ url_for('static', filename='img/darkmode.svg') }}" class="nav-icon" alt="Dark Mode" />
-          <img
-            src="{{ url_for('static', filename='img/notification.svg') }}"
-            class="nav-icon"
-            alt="Notification"
-          />
+          <div class="notification-wrapper">
+            <img 
+              src="{{ url_for('static', filename='img/notification.svg') }}" 
+              class="nav-icon notification-icon" 
+              alt="Notification" 
+              id="notificationBell"
+            />
+            <span class="notification-badge" id="notificationBadge">0</span>
+            
+            <div class="notification-dropdown" id="notificationDropdown">
+              <div class="notification-header">
+                <h3>Notifikasi</h3>
+                <button class="mark-all-read" id="markAllRead">Tandai Semua Dibaca</button>
+              </div>
+              <div class="notification-list" id="notificationList">
+                <div class="notification-loading">
+                  <div class="spinner"></div>
+                  <p>Memuat notifikasi...</p>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div class="user-info">
-            <img
-              src="{{ user.profile_picture or 'https://i.pravatar.cc/40' }}"
-              alt="Profile"
-              class="user-avatar"
-            />
-            <div>
+            <img src="{{ user.profile_picture or 'https://i.pravatar.cc/40' }}" alt="Profile" class="user-avatar" />
+            <div class="user-info-text">
               <strong>{{ user.nama }}</strong>
-              <small>Admin PUTI</small>
+              <small>Admin</small>
             </div>
           </div>
         </div>
@@ -99,8 +117,8 @@
             </div>
             <div class="card">
               <div class="card-info">
-                <span class="card-title">Sudah OMNI</span>
-                <h2 class="card-value" id="sudahOmni">-</h2>
+                <span class="card-title">Mahasiswa Rentan</span>
+                <h2 class="card-value" id="totalRentan">-</h2>
               </div>
               <div class="card-icon-bg bg-red">
                 <img src="{{ url_for('static', filename='img/folder.svg') }}" alt="icon" />
@@ -108,8 +126,8 @@
             </div>
             <div class="card">
               <div class="card-info">
-                <span class="card-title">Belum OMNI</span>
-                <h2 class="card-value" id="belumOmni">-</h2>
+                <span class="card-title">Sangat Rentan</span>
+                <h2 class="card-value" id="criticalCount">-</h2>
               </div>
               <div class="card-icon-bg bg-light-red">
                 <img src="{{ url_for('static', filename='img/magnifier.svg') }}" alt="icon" />
@@ -121,7 +139,7 @@
           <div class="section-title">
             <h2>Daftar Mahasiswa Rentan</h2>
             <p>
-              Mahasiswa dengan skor OMNI tinggi yang memerlukan perhatian khusus
+              Mahasiswa dengan indikasi risiko kesehatan mental yang memerlukan perhatian khusus
             </p>
           </div>
 
@@ -132,12 +150,19 @@
               <input type="text" id="searchInput" placeholder="Cari nama atau NIM..." />
             </div>
             <div class="actions-new">
+              <select class="dropdown-new" id="filterRisk">
+                <option value="">Semua Tingkat Risiko</option>
+                <option value="critical">Sangat Rentan</option>
+                <option value="high">Rentan Tinggi</option>
+                <option value="medium">Rentan Sedang</option>
+              </select>
               <select class="dropdown-new" id="filterAngkatan">
                 <option value="">Semua Angkatan</option>
                 <option value="2024">2024</option>
                 <option value="2023">2023</option>
                 <option value="2022">2022</option>
                 <option value="2021">2021</option>
+                <option value="lainnya">Lainnya</option>
               </select>
               <button class="btn-export-new" id="btnExport">
                 Export <img src="{{ url_for('static', filename='img/export.svg') }}" alt="download" />
@@ -159,14 +184,15 @@
                   <th>NIM</th>
                   <th>Nama</th>
                   <th>Fakultas</th>
-                  <th>Program Studi</th>
-                  <th>Skor OMNI</th>
+                  <th>Risk Score</th>
                   <th>Kategori</th>
+                  <th>Concern Utama</th>
+                  <th>Aksi</th>
                 </tr>
               </thead>
               <tbody id="mahasiswaTableBody">
                 <tr>
-                  <td colspan="7" style="text-align: center; padding: 40px;">
+                  <td colspan="8" style="text-align: center; padding: 40px;">
                     Memuat data mahasiswa...
                   </td>
                 </tr>
@@ -176,10 +202,23 @@
 
           <!-- Empty State -->
           <div id="emptyState" style="display: none; text-align: center; padding: 40px;">
-            <p>Tidak ada data mahasiswa rentan ditemukan</p>
+            <p>✅ Tidak ada mahasiswa rentan ditemukan</p>
           </div>
         </div>
       </main>
+
+      <!-- Detail Modal -->
+      <div class="detail-modal" id="detailModal">
+        <div class="detail-card">
+          <div class="detail-header">
+            <h2>Detail Assessment Mahasiswa</h2>
+            <button class="close-modal" id="closeModal">&times;</button>
+          </div>
+          <div class="detail-content" id="detailContent">
+            <!-- Content will be loaded here -->
+          </div>
+        </div>
+      </div>
 
       <!-- Logout Modal -->
       <div class="logout-modal" id="logoutModal">
@@ -195,5 +234,6 @@
     </section>
 
     <script src="{{ url_for('static', filename='js/mahasiswarentan.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/notification.js') }}"></script>
   </body>
 </html>

@@ -1,468 +1,548 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{ url_for('static', filename='img/logo-head.svg') }}"
+    />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OmniMap - Detail Hasil Tes</title>
+
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
     <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <style>
-        .detail-header {
-            background: linear-gradient(135deg, #c62828 0%, #e57373 100%);
-            border-radius: 20px;
-            padding: 30px;
-            color: white;  /* Sudah ada */
-            margin-bottom: 30px;
-        }
-        .detail-header h1 {
-            color: white !important;
-        }
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+    />
 
-        .detail-header i {
-            color: white !important;
-        }
+    <!-- Page Specific Styles -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/detail_hasil_tes.css') }}"
+    />
+  </head>
 
-        .detail-card {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-        }
+  <body style="background: #fee8e9">
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-        .section-title {
-            color: #c62828;
-            font-weight: 700;
-            font-size: 1.5rem;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 3px solid #c62828;
-        }
+    <!-- SIDEBAR -->
+    <section id="sidebar">
+      <div class="brand">
+        <a href="{{ url_for('dashboard') }}" class="omnimap-brand-link">
+          <img
+            src="{{ url_for('static', filename='img/logo.svg') }}"
+            class="omnimap-logo-full"
+            alt="OmniMap Logo"
+          />
+          <img
+            src="{{ url_for('static', filename='img/logo-head.svg') }}"
+            class="omnimap-logo-collapsed"
+            alt="OmniMap Logo"
+          />
+        </a>
+        <i class="bi bi-list toggle-sidebar sidebar-hamburger"></i>
+      </div>
 
-        .dimension-table {
-            width: 100%;
-            margin-bottom: 0;
-        }
+      <ul class="side-menu">
+        <li>
+          <a href="{{ url_for('dashboard') }}">
+            <img
+              src="{{ url_for('static', filename='img/dashboard.svg') }}"
+              class="sidebar-icon"
+            />
+            <span class="text">Dashboard</span>
+          </a>
+        </li>
 
-        .dimension-table thead {
-            background: #c62828;
-            color: white;
-        }
+        <li>
+          <a href="{{ url_for('tes_omni') }}">
+            <img
+              src="{{ url_for('static', filename='img/testomni.svg') }}"
+              class="sidebar-icon"
+            />
+            <span class="text">Tes Omni</span>
+          </a>
+        </li>
 
-        .dimension-table thead th {
-            padding: 15px;
-            font-weight: 600;
-            text-align: center;
-            border: none;
-        }
+        <li>
+          <a href="{{ url_for('hasil_tes') }}" class="active">
+            <img
+              src="{{ url_for('static', filename='img/hasiltesomni.svg') }}"
+              class="sidebar-icon"
+            />
+            <span class="text">Hasil Tes Omni</span>
+          </a>
+        </li>
 
-        .dimension-table tbody td {
-            padding: 12px 15px;
-            vertical-align: middle;
-            border-bottom: 1px solid #f0f0f0;
-        }
+        <li>
+          <a href="{{ url_for('rekomendasi_kegiatan') }}">
+            <img
+              src="{{ url_for('static', filename='img/rekomendasi.svg') }}"
+              class="sidebar-icon"
+            />
+            <span class="text">Rekomendasi Kegiatan</span>
+          </a>
+        </li>
 
-        .dimension-table tbody tr:last-child td {
-            border-bottom: none;
-        }
+        <li>
+          <a href="{{ url_for('profile') }}">
+            <img
+              src="{{ url_for('static', filename='img/profile.svg') }}"
+              class="sidebar-icon"
+            />
+            <span class="text">Profile</span>
+          </a>
+        </li>
 
-        .dimension-table tbody tr:hover {
-            background-color: #fff5f5;
-        }
-
-        .score-badge {
-            display: inline-block;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            min-width: 60px;
-            text-align: center;
-        }
-
-        .kategori-badge {
-            display: inline-block;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            min-width: 100px;
-            text-align: center;
-        }
-
-        .kategori-sangat-tinggi {
-            background: #d32f2f;
-            color: white;
-        }
-
-        .kategori-tinggi {
-            background: #ff5722;
-            color: white;
-        }
-
-        .kategori-sedang {
-            background: #ffc107;
-            color: #333;
-        }
-
-        .kategori-rendah {
-            background: #4caf50;
-            color: white;
-        }
-
-        .kategori-sangat-rendah {
-            background: #2196f3;
-            color: white;
-        }
-
-        .score-raw {
-            background: #e3f2fd;
-            color: #1976d2;
-        }
-
-        .score-t {
-            background: #fce4ec;
-            color: #c62828;
-        }
-
-        .btn-back {
-            background: white;
-            color: #c62828;
-            border: 2px solid #c62828;
-            padding: 10px 30px;
-            border-radius: 10px;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-
-        .btn-back:hover {
-            background: #c62828;
-            color: white;
-        }
-
-        .domain-section {
-            margin-bottom: 40px;
-        }
-
-        .no-column {
-            width: 50px;
-            text-align: center;
-            font-weight: 600;
-            color: #666;
-        }
-
-        .construct-column {
-            font-weight: 500;
-            color: #333;
-        }
-
-        .score-column {
-            text-align: center;
-            width: 120px;
-        }
-
-        .kategori-column {
-            text-align: center;
-            width: 150px;
-        }
-
-        .facets-section {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 10px;
-        }
-
-        .facet-row {
-            background: white;
-            margin-bottom: 8px;
-            padding: 10px 15px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .facet-name {
-            font-weight: 500;
-            color: #555;
-            flex: 1;
-        }
-
-        .facet-scores {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-    </style>
-</head>
-
-<body style="background: #fee8e9;">
-
-    {% include 'partials/sidebar.html' %}
-
-    <!-- NAVBAR -->
-    <section id="content">
-        {% include 'partials/navbar.html' %}
-
-        <!-- MAIN -->
-        <main class="omnimap-content-wrapper">
-            <div class="btnChatbot">
-                <a href="{{ url_for('chatbot') }}"><img src="{{ url_for('static', filename='img/chatbot.svg') }}" alt=""></a>
-            </div>
-
-            <!-- Header Section -->
-            <div class="container">
-                <div class="detail-header">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <h1 class="mb-3"><i class="bi bi-clipboard-data me-2"></i>Dimensi Kepribadian</h1>
-                            <p class="mb-0" style="font-size: 1.1rem; opacity: 0.95;">
-                                Detail lengkap hasil tes kepribadian OMNI Anda
-                            </p>
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <a href="/hasil-tes" class="btn-back">
-                                <i class="bi bi-arrow-left me-2"></i>Kembali
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Facets Section -->
-            <div class="container domain-section">
-                <div class="detail-card">
-                    <h3 class="section-title"><i class="bi bi-bar-chart-fill me-2"></i>25 Facets (Dimensi Kepribadian)</h3>
-                    <p class="text-muted mb-4">Berikut adalah 25 dimensi kepribadian yang diukur dalam tes OMNI:</p>
-                    
-                    <div class="table-responsive">
-                        <table class="dimension-table table">
-                            <thead>
-                                <tr>
-                                    <th class="no-column">#</th>
-                                    <th>Konstruk</th>
-                                    <th class="score-column">Raw Score</th>
-                                    <th class="score-column">T-Score</th>
-                                    <th class="kategori-column">Kategori</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% set facets = [
-                                    ('Aestheticism', user.aestheticism_raw, user.aestheticism_t, user.aestheticism_kategori),
-                                    ('Ambition', user.ambition_raw, user.ambition_t, user.ambition_kategori),
-                                    ('Anxiety', user.anxiety_raw, user.anxiety_t, user.anxiety_kategori),
-                                    ('Assertiveness', user.assertiveness_raw, user.assertiveness_t, user.assertiveness_kategori),
-                                    ('Conventionality', user.conventionality_raw, user.conventionality_t, user.conventionality_kategori),
-                                    ('Depression', user.depression_raw, user.depression_t, user.depression_kategori),
-                                    ('Dutifulness', user.dutifulness_raw, user.dutifulness_t, user.dutifulness_kategori),
-                                    ('Energy', user.energy_raw, user.energy_t, user.energy_kategori),
-                                    ('Excitement', user.excitement_raw, user.excitement_t, user.excitement_kategori),
-                                    ('Exhibitionism', user.exhibitionism_raw, user.exhibitionism_t, user.exhibitionism_kategori),
-                                    ('Flexibility', user.flexibility_raw, user.flexibility_t, user.flexibility_kategori),
-                                    ('Hostility', user.hostility_raw, user.hostility_t, user.hostility_kategori),
-                                    ('Impulsiveness', user.impulsiveness_raw, user.impulsiveness_t, user.impulsiveness_kategori),
-                                    ('Intellect', user.intellect_raw, user.intellect_t, user.intellect_kategori),
-                                    ('Irritability', user.irritability_raw, user.irritability_t, user.irritability_kategori),
-                                    ('Modesty', user.modesty_raw, user.modesty_t, user.modesty_kategori),
-                                    ('Moodiness', user.moodiness_raw, user.moodiness_t, user.moodiness_kategori),
-                                    ('Orderliness', user.orderliness_raw, user.orderliness_t, user.orderliness_kategori),
-                                    ('Self Indulgence', user.self_indulgence_raw, user.self_indulgence_t, user.self_indulgence_kategori),
-                                    ('Self Reliance', user.self_reliance_raw, user.self_reliance_t, user.self_reliance_kategori),
-                                    ('Sincerity', user.sincerity_raw, user.sincerity_t, user.sincerity_kategori),
-                                    ('Sociability', user.sociability_raw, user.sociability_t, user.sociability_kategori),
-                                    ('Tolerance', user.tolerance_raw, user.tolerance_t, user.tolerance_kategori),
-                                    ('Trustfulness', user.trustfulness_raw, user.trustfulness_t, user.trustfulness_kategori),
-                                    ('Warmth', user.warmth_raw, user.warmth_t, user.warmth_kategori)
-                                ] %}
-                                
-                                {% for name, raw, t_score, kategori in facets %}
-                                <tr>
-                                    <td class="no-column">{{ '%02d'|format(loop.index) }}</td>
-                                    <td class="construct-column">{{ name }}</td>
-                                    <td class="score-column">
-                                        <span class="score-badge score-raw">{{ raw|round(2) if raw else 'N/A' }}</span>
-                                    </td>
-                                    <td class="score-column">
-                                        <span class="score-badge score-t">{{ t_score|round(2) if t_score else 'N/A' }}</span>
-                                    </td>
-                                    <td class="kategori-column">
-                                        {% if kategori == 'Sangat Tinggi' %}
-                                        <span class="kategori-badge kategori-sangat-tinggi">{{ kategori }}</span>
-                                        {% elif kategori == 'Tinggi' %}
-                                        <span class="kategori-badge kategori-tinggi">{{ kategori }}</span>
-                                        {% elif kategori == 'Sedang' %}
-                                        <span class="kategori-badge kategori-sedang">{{ kategori }}</span>
-                                        {% elif kategori == 'Rendah' %}
-                                        <span class="kategori-badge kategori-rendah">{{ kategori }}</span>
-                                        {% elif kategori == 'Sangat Rendah' %}
-                                        <span class="kategori-badge kategori-sangat-rendah">{{ kategori }}</span>
-                                        {% else %}
-                                        <span class="kategori-badge kategori-sedang">N/A</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Domains Section -->
-            <div class="container domain-section">
-                <div class="detail-card">
-                    <h3 class="section-title"><i class="bi bi-diagram-3-fill me-2"></i>5 Big Domains (Domain Utama)</h3>
-                    <p class="text-muted mb-4">Lima domain utama kepribadian berdasarkan teori Big Five:</p>
-                    
-                    <div class="table-responsive">
-                        <table class="dimension-table table">
-                            <thead>
-                                <tr>
-                                    <th class="no-column">#</th>
-                                    <th>Konstruk</th>
-                                    <th class="score-column">Raw Score</th>
-                                    <th class="score-column">T-Score</th>
-                                    <th class="kategori-column">Kategori</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% set domains = [
-                                    ('Extraversion', user.extraversion_raw, user.extraversion_t, user.extraversion_kategori),
-                                    ('Agreeableness', user.agreeableness_raw, user.agreeableness_t, user.agreeableness_kategori),
-                                    ('Conscientiousness', user.conscientiousness_raw, user.conscientiousness_t, user.conscientiousness_kategori),
-                                    ('Neuroticism', user.neuroticism_raw, user.neuroticism_t, user.neuroticism_kategori),
-                                    ('Openness', user.openness_raw, user.openness_t, user.openness_kategori)
-                                ] %}
-                                
-                                {% for name, raw, t_score, kategori in domains %}
-                                <tr>
-                                    <td class="no-column">{{ '%02d'|format(loop.index) }}</td>
-                                    <td class="construct-column"><strong>{{ name }}</strong></td>
-                                    <td class="score-column">
-                                        <span class="score-badge score-raw">{{ raw|round(2) if raw else 'N/A' }}</span>
-                                    </td>
-                                    <td class="score-column">
-                                        <span class="score-badge score-t">{{ t_score|round(2) if t_score else 'N/A' }}</span>
-                                    </td>
-                                    <td class="kategori-column">
-                                        {% if kategori == 'Sangat Tinggi' %}
-                                        <span class="kategori-badge kategori-sangat-tinggi">{{ kategori }}</span>
-                                        {% elif kategori == 'Tinggi' %}
-                                        <span class="kategori-badge kategori-tinggi">{{ kategori }}</span>
-                                        {% elif kategori == 'Sedang' %}
-                                        <span class="kategori-badge kategori-sedang">{{ kategori }}</span>
-                                        {% elif kategori == 'Rendah' %}
-                                        <span class="kategori-badge kategori-rendah">{{ kategori }}</span>
-                                        {% elif kategori == 'Sangat Rendah' %}
-                                        <span class="kategori-badge kategori-sangat-rendah">{{ kategori }}</span>
-                                        {% else %}
-                                        <span class="kategori-badge kategori-sedang">N/A</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Additional Constructs Section -->
-            <div class="container domain-section">
-                <div class="detail-card">
-                    <h3 class="section-title"><i class="bi bi-stars me-2"></i>Additional Constructs</h3>
-                    <p class="text-muted mb-4">Konstruk tambahan yang diukur dalam tes OMNI:</p>
-                    
-                    <div class="table-responsive">
-                        <table class="dimension-table table">
-                            <thead>
-                                <tr>
-                                    <th class="no-column">#</th>
-                                    <th>Konstruk</th>
-                                    <th class="score-column">Raw Score</th>
-                                    <th class="score-column">T-Score</th>
-                                    <th class="kategori-column">Kategori</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% set additional = [
-                                    ('Narcissism', user.narcissism_raw, user.narcissism_t, user.narcissism_kategori),
-                                    ('Sensation Seeking', user.sensation_seeking_raw, user.sensation_seeking_t, user.sensation_seeking_kategori)
-                                ] %}
-                                
-                                {% for name, raw, t_score, kategori in additional %}
-                                <tr>
-                                    <td class="no-column">{{ '%02d'|format(loop.index) }}</td>
-                                    <td class="construct-column"><strong>{{ name }}</strong></td>
-                                    <td class="score-column">
-                                        <span class="score-badge score-raw">{{ raw|round(2) if raw else 'N/A' }}</span>
-                                    </td>
-                                    <td class="score-column">
-                                        <span class="score-badge score-t">{{ t_score|round(2) if t_score else 'N/A' }}</span>
-                                    </td>
-                                    <td class="kategori-column">
-                                        {% if kategori == 'Sangat Tinggi' %}
-                                        <span class="kategori-badge kategori-sangat-tinggi">{{ kategori }}</span>
-                                        {% elif kategori == 'Tinggi' %}
-                                        <span class="kategori-badge kategori-tinggi">{{ kategori }}</span>
-                                        {% elif kategori == 'Sedang' %}
-                                        <span class="kategori-badge kategori-sedang">{{ kategori }}</span>
-                                        {% elif kategori == 'Rendah' %}
-                                        <span class="kategori-badge kategori-rendah">{{ kategori }}</span>
-                                        {% elif kategori == 'Sangat Rendah' %}
-                                        <span class="kategori-badge kategori-sangat-rendah">{{ kategori }}</span>
-                                        {% else %}
-                                        <span class="kategori-badge kategori-sedang">N/A</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Interpretation Guide -->
-            <div class="container mb-5">
-                <div class="detail-card">
-                    <h3 class="section-title"><i class="bi bi-info-circle-fill me-2"></i>Panduan Interpretasi</h3>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <h5 class="text-dark mb-3">Kategori T-Score:</h5>
-                            <ul class="list-unstyled">
-                                <li class="mb-2"><span class="kategori-badge kategori-sangat-tinggi me-2">Sangat Tinggi</span> T ≥ 65</li>
-                                <li class="mb-2"><span class="kategori-badge kategori-tinggi me-2">Tinggi</span> 55 ≤ T < 65</li>
-                                <li class="mb-2"><span class="kategori-badge kategori-sedang me-2">Sedang</span> 45 ≤ T < 55</li>
-                                <li class="mb-2"><span class="kategori-badge kategori-rendah me-2">Rendah</span> 35 ≤ T < 45</li>
-                                <li class="mb-2"><span class="kategori-badge kategori-sangat-rendah me-2">Sangat Rendah</span> T < 35</li>
-                            </ul>
-                        </div>
-                        <div class="col-md-6">
-                            <h5 class="text-dark mb-3">Keterangan:</h5>
-                            <p><strong>Raw Score:</strong> Skor mentah dari jawaban kuesioner</p>
-                            <p><strong>T-Score:</strong> Skor standar dengan mean 50 dan standar deviasi 10</p>
-                            <p class="mb-0"><strong>Kategori:</strong> Klasifikasi berdasarkan T-Score untuk interpretasi</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </main>
-        <!-- MAIN -->
+        <li>
+          <a href="#" id="signOutBtn">
+            <img
+              src="{{ url_for('static', filename='img/signout.svg') }}"
+              class="sidebar-icon"
+            />
+            <span class="text">Sign Out</span>
+          </a>
+        </li>
+      </ul>
     </section>
-    <!-- NAVBAR -->
 
-    {% include 'partials/logout_modal.html' %}
-    
+    <!-- CONTENT -->
+    <section id="content">
+      <!-- NAVBAR -->
+    <nav class="top-navbar">
+      <i class="bi bi-list toggle-sidebar nav-hamburger"></i>
+
+      <div class="navbar-right">
+        <!-- Notification Icon with Badge -->
+        <div class="notification-wrapper">
+          <img 
+            src="{{ url_for('static', filename='img/notification.svg') }}" 
+            class="nav-icon notification-icon" 
+            alt="Notification" 
+            id="notificationBell"
+          />
+          <span class="notification-badge" id="notificationBadge">0</span>
+          
+          <!-- Notification Dropdown -->
+          <div class="notification-dropdown" id="notificationDropdown">
+            <div class="notification-header">
+              <h3>Notifikasi</h3>
+              <button class="mark-all-read" id="markAllRead">Tandai Semua Dibaca</button>
+            </div>
+            <div class="notification-list" id="notificationList">
+              <!-- Notifications will be loaded here -->
+              <div class="notification-loading">
+                <div class="spinner"></div>
+                <p>Memuat notifikasi...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="user-info">
+          <img src="{{ user.profile_picture or 'https://i.pravatar.cc/40' }}" alt="Profile" class="user-avatar" />
+          <div class="user-info-text">
+            <strong>{{ user.nama }}</strong>
+            <small>Mahasiswa</small>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+      <!-- MAIN -->
+      <main class="omnimap-content-wrapper">
+        <div class="btnChatbot">
+          <a href="{{ url_for('chatbot') }}">
+            <img
+              src="{{ url_for('static', filename='img/chatbot.svg') }}"
+              alt="Chatbot"
+            />
+          </a>
+        </div>
+
+        <!-- Header Section -->
+        <div class="container">
+          <div class="detail-header">
+            <div class="row align-items-center">
+              <div class="col-md-8">
+                <h1 class="mb-3">
+                  <i class="bi bi-clipboard-data me-2"></i>Dimensi Kepribadian
+                </h1>
+                <p class="mb-0" style="font-size: 1.1rem; opacity: 0.95">
+                  Detail lengkap hasil tes kepribadian OMNI Anda
+                </p>
+              </div>
+              <div class="col-md-4 text-end">
+                <a href="/hasil-tes" class="btn-back">
+                  <i class="bi bi-arrow-left me-2"></i>Kembali
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Facets Section -->
+        <div class="container domain-section">
+          <div class="detail-card">
+            <h3 class="section-title">
+              <i class="bi bi-bar-chart-fill me-2"></i>25 Facets (Dimensi
+              Kepribadian)
+            </h3>
+            <p class="text-muted mb-4">
+              Berikut adalah 25 dimensi kepribadian yang diukur dalam tes OMNI:
+            </p>
+
+            <div class="table-responsive">
+              <table class="dimension-table table">
+                <thead>
+                  <tr>
+                    <th class="no-column">#</th>
+                    <th>Konstruk</th>
+                    <th class="score-column">Raw Score</th>
+                    <th class="score-column">T-Score</th>
+                    <th class="kategori-column">Kategori</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% set facets = [ ('Aestheticism', user.aestheticism_raw,
+                  user.aestheticism_t, user.aestheticism_kategori), ('Ambition',
+                  user.ambition_raw, user.ambition_t, user.ambition_kategori),
+                  ('Anxiety', user.anxiety_raw, user.anxiety_t,
+                  user.anxiety_kategori), ('Assertiveness',
+                  user.assertiveness_raw, user.assertiveness_t,
+                  user.assertiveness_kategori), ('Conventionality',
+                  user.conventionality_raw, user.conventionality_t,
+                  user.conventionality_kategori), ('Depression',
+                  user.depression_raw, user.depression_t,
+                  user.depression_kategori), ('Dutifulness',
+                  user.dutifulness_raw, user.dutifulness_t,
+                  user.dutifulness_kategori), ('Energy', user.energy_raw,
+                  user.energy_t, user.energy_kategori), ('Excitement',
+                  user.excitement_raw, user.excitement_t,
+                  user.excitement_kategori), ('Exhibitionism',
+                  user.exhibitionism_raw, user.exhibitionism_t,
+                  user.exhibitionism_kategori), ('Flexibility',
+                  user.flexibility_raw, user.flexibility_t,
+                  user.flexibility_kategori), ('Hostility', user.hostility_raw,
+                  user.hostility_t, user.hostility_kategori), ('Impulsiveness',
+                  user.impulsiveness_raw, user.impulsiveness_t,
+                  user.impulsiveness_kategori), ('Intellect',
+                  user.intellect_raw, user.intellect_t,
+                  user.intellect_kategori), ('Irritability',
+                  user.irritability_raw, user.irritability_t,
+                  user.irritability_kategori), ('Modesty', user.modesty_raw,
+                  user.modesty_t, user.modesty_kategori), ('Moodiness',
+                  user.moodiness_raw, user.moodiness_t,
+                  user.moodiness_kategori), ('Orderliness',
+                  user.orderliness_raw, user.orderliness_t,
+                  user.orderliness_kategori), ('Self Indulgence',
+                  user.self_indulgence_raw, user.self_indulgence_t,
+                  user.self_indulgence_kategori), ('Self Reliance',
+                  user.self_reliance_raw, user.self_reliance_t,
+                  user.self_reliance_kategori), ('Sincerity',
+                  user.sincerity_raw, user.sincerity_t,
+                  user.sincerity_kategori), ('Sociability',
+                  user.sociability_raw, user.sociability_t,
+                  user.sociability_kategori), ('Tolerance', user.tolerance_raw,
+                  user.tolerance_t, user.tolerance_kategori), ('Trustfulness',
+                  user.trustfulness_raw, user.trustfulness_t,
+                  user.trustfulness_kategori), ('Warmth', user.warmth_raw,
+                  user.warmth_t, user.warmth_kategori) ] %} {% for name, raw,
+                  t_score, kategori in facets %}
+                  <tr>
+                    <td class="no-column">{{ '%02d'|format(loop.index) }}</td>
+                    <td class="construct-column">{{ name }}</td>
+                    <td class="score-column">
+                      <span class="score-badge score-raw"
+                        >{{ raw|round(2) if raw else 'N/A' }}</span
+                      >
+                    </td>
+                    <td class="score-column">
+                      <span class="score-badge score-t"
+                        >{{ t_score|round(2) if t_score else 'N/A' }}</span
+                      >
+                    </td>
+                    <td class="kategori-column">
+                      {% if kategori == 'Sangat Tinggi' %}
+                      <span class="kategori-badge kategori-sangat-tinggi"
+                        >{{ kategori }}</span
+                      >
+                      {% elif kategori == 'Tinggi' %}
+                      <span class="kategori-badge kategori-tinggi"
+                        >{{ kategori }}</span
+                      >
+                      {% elif kategori == 'Sedang' %}
+                      <span class="kategori-badge kategori-sedang"
+                        >{{ kategori }}</span
+                      >
+                      {% elif kategori == 'Rendah' %}
+                      <span class="kategori-badge kategori-rendah"
+                        >{{ kategori }}</span
+                      >
+                      {% elif kategori == 'Sangat Rendah' %}
+                      <span class="kategori-badge kategori-sangat-rendah"
+                        >{{ kategori }}</span
+                      >
+                      {% else %}
+                      <span class="kategori-badge kategori-sedang">N/A</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Domains Section -->
+        <div class="container domain-section">
+          <div class="detail-card">
+            <h3 class="section-title">
+              <i class="bi bi-diagram-3-fill me-2"></i>5 Big Domains (Domain
+              Utama)
+            </h3>
+            <p class="text-muted mb-4">
+              Lima domain utama kepribadian berdasarkan teori Big Five:
+            </p>
+
+            <div class="table-responsive">
+              <table class="dimension-table table">
+                <thead>
+                  <tr>
+                    <th class="no-column">#</th>
+                    <th>Konstruk</th>
+                    <th class="score-column">Raw Score</th>
+                    <th class="score-column">T-Score</th>
+                    <th class="kategori-column">Kategori</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% set domains = [ ('Extraversion', user.extraversion_raw,
+                  user.extraversion_t, user.extraversion_kategori),
+                  ('Agreeableness', user.agreeableness_raw,
+                  user.agreeableness_t, user.agreeableness_kategori),
+                  ('Conscientiousness', user.conscientiousness_raw,
+                  user.conscientiousness_t, user.conscientiousness_kategori),
+                  ('Neuroticism', user.neuroticism_raw, user.neuroticism_t,
+                  user.neuroticism_kategori), ('Openness', user.openness_raw,
+                  user.openness_t, user.openness_kategori) ] %} {% for name,
+                  raw, t_score, kategori in domains %}
+                  <tr>
+                    <td class="no-column">{{ '%02d'|format(loop.index) }}</td>
+                    <td class="construct-column">
+                      <strong>{{ name }}</strong>
+                    </td>
+                    <td class="score-column">
+                      <span class="score-badge score-raw"
+                        >{{ raw|round(2) if raw else 'N/A' }}</span
+                      >
+                    </td>
+                    <td class="score-column">
+                      <span class="score-badge score-t"
+                        >{{ t_score|round(2) if t_score else 'N/A' }}</span
+                      >
+                    </td>
+                    <td class="kategori-column">
+                      {% if kategori == 'Sangat Tinggi' %}
+                      <span class="kategori-badge kategori-sangat-tinggi"
+                        >{{ kategori }}</span
+                      >
+                      {% elif kategori == 'Tinggi' %}
+                      <span class="kategori-badge kategori-tinggi"
+                        >{{ kategori }}</span
+                      >
+                      {% elif kategori == 'Sedang' %}
+                      <span class="kategori-badge kategori-sedang"
+                        >{{ kategori }}</span
+                      >
+                      {% elif kategori == 'Rendah' %}
+                      <span class="kategori-badge kategori-rendah"
+                        >{{ kategori }}</span
+                      >
+                      {% elif kategori == 'Sangat Rendah' %}
+                      <span class="kategori-badge kategori-sangat-rendah"
+                        >{{ kategori }}</span
+                      >
+                      {% else %}
+                      <span class="kategori-badge kategori-sedang">N/A</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Additional Constructs Section -->
+        <div class="container domain-section">
+          <div class="detail-card">
+            <h3 class="section-title">
+              <i class="bi bi-stars me-2"></i>Additional Constructs
+            </h3>
+            <p class="text-muted mb-4">
+              Konstruk tambahan yang diukur dalam tes OMNI:
+            </p>
+
+            <div class="table-responsive">
+              <table class="dimension-table table">
+                <thead>
+                  <tr>
+                    <th class="no-column">#</th>
+                    <th>Konstruk</th>
+                    <th class="score-column">Raw Score</th>
+                    <th class="score-column">T-Score</th>
+                    <th class="kategori-column">Kategori</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% set additional = [ ('Narcissism', user.narcissism_raw,
+                  user.narcissism_t, user.narcissism_kategori), ('Sensation
+                  Seeking', user.sensation_seeking_raw,
+                  user.sensation_seeking_t, user.sensation_seeking_kategori) ]
+                  %} {% for name, raw, t_score, kategori in additional %}
+                  <tr>
+                    <td class="no-column">{{ '%02d'|format(loop.index) }}</td>
+                    <td class="construct-column">
+                      <strong>{{ name }}</strong>
+                    </td>
+                    <td class="score-column">
+                      <span class="score-badge score-raw"
+                        >{{ raw|round(2) if raw else 'N/A' }}</span
+                      >
+                    </td>
+                    <td class="score-column">
+                      <span class="score-badge score-t"
+                        >{{ t_score|round(2) if t_score else 'N/A' }}</span
+                      >
+                    </td>
+                    <td class="kategori-column">
+                      {% if kategori == 'Sangat Tinggi' %}
+                      <span class="kategori-badge kategori-sangat-tinggi"
+                        >{{ kategori }}</span
+                      >
+                      {% elif kategori == 'Tinggi' %}
+                      <span class="kategori-badge kategori-tinggi"
+                        >{{ kategori }}</span
+                      >
+                      {% elif kategori == 'Sedang' %}
+                      <span class="kategori-badge kategori-sedang"
+                        >{{ kategori }}</span
+                      >
+                      {% elif kategori == 'Rendah' %}
+                      <span class="kategori-badge kategori-rendah"
+                        >{{ kategori }}</span
+                      >
+                      {% elif kategori == 'Sangat Rendah' %}
+                      <span class="kategori-badge kategori-sangat-rendah"
+                        >{{ kategori }}</span
+                      >
+                      {% else %}
+                      <span class="kategori-badge kategori-sedang">N/A</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interpretation Guide -->
+        <div class="container mb-5">
+          <div class="detail-card">
+            <h3 class="section-title">
+              <i class="bi bi-info-circle-fill me-2"></i>Panduan Interpretasi
+            </h3>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <h5 class="text-dark mb-3">Kategori T-Score:</h5>
+                <ul class="list-unstyled">
+                  <li class="mb-2">
+                    <span class="kategori-badge kategori-sangat-tinggi me-2"
+                      >Sangat Tinggi</span
+                    >
+                    T ≥ 65
+                  </li>
+                  <li class="mb-2">
+                    <span class="kategori-badge kategori-tinggi me-2"
+                      >Tinggi</span
+                    >
+                    55 ≤ T < 65
+                  </li>
+                  <li class="mb-2">
+                    <span class="kategori-badge kategori-sedang me-2"
+                      >Sedang</span
+                    >
+                    45 ≤ T < 55
+                  </li>
+                  <li class="mb-2">
+                    <span class="kategori-badge kategori-rendah me-2"
+                      >Rendah</span
+                    >
+                    35 ≤ T < 45
+                  </li>
+                  <li class="mb-2">
+                    <span class="kategori-badge kategori-sangat-rendah me-2"
+                      >Sangat Rendah</span
+                    >
+                    T < 35
+                  </li>
+                </ul>
+              </div>
+              <div class="col-md-6">
+                <h5 class="text-dark mb-3">Keterangan:</h5>
+                <p>
+                  <strong>Raw Score:</strong> Skor mentah dari jawaban kuesioner
+                </p>
+                <p>
+                  <strong>T-Score:</strong> Skor standar dengan mean 50 dan
+                  standar deviasi 10
+                </p>
+                <p class="mb-0">
+                  <strong>Kategori:</strong> Klasifikasi berdasarkan T-Score
+                  untuk interpretasi
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+      <!-- MAIN -->
+
+      <!-- Logout Modal -->
+      <div class="logout-modal" id="logoutModal">
+        <div class="logout-card">
+          <img
+            src="{{ url_for('static', filename='img/logout.svg') }}"
+            alt="Logout"
+            class="logout-image"
+          />
+          <h2>Apakah Anda yakin ingin logout?</h2>
+          <div class="logout-actions">
+            <button class="btn-logout-cancel" id="logoutCancel">Tidak</button>
+            <button class="btn-logout-confirm" id="logoutConfirm">Ya</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-</body>
 
+    <!-- Page Specific Scripts -->
+    <script src="{{ url_for('static', filename='js/detail_hasil_tes.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/notification.js') }}"></script>
+  </body>
 </html>

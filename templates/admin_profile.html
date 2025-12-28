@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo-head.svg') }}">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Profile</title>
@@ -16,17 +17,21 @@
   </head>
   <body>
         <section id="sidebar">
-      <div class="brand">
-        <a href="{{ url_for('mahasiswa_rentan') }}" class="omnimap-brand-link">
-          <img
-            src="{{ url_for('static', filename='img/logo.svg') }}"
-            class="omnimap-logo-full"
-            alt="OmniMap Logo"
-          />
-        </a>
-        <i class="bi bi-list toggle-sidebar sidebar-hamburger"></i>
-      </div>
-
+          <div class="brand">
+            <a href="{{ url_for('mahasiswa_rentan') }}" class="omnimap-brand-link">
+              <img
+                src="{{ url_for('static', filename='img/logo.svg') }}"
+                class="omnimap-logo-full"
+                alt="OmniMap Logo"
+              />
+              <img
+              src="{{ url_for('static', filename='img/logo-head.svg') }}"
+              class="omnimap-logo-collapsed"
+              alt="OmniMap Logo"
+              />
+            </a>
+            <i class="bi bi-list toggle-sidebar sidebar-hamburger"></i>
+          </div>
       <ul class="side-menu">
         <li>
           <a href="{{ url_for('mahasiswa_rentan') }}" {% if active_page == 'mahasiswa_rentan' %}class="active"{% endif %}>
@@ -60,42 +65,92 @@
 
 
     <section id="content">
-      <nav class="top-navbar">
-        <i class="bi bi-list toggle-sidebar nav-hamburger"></i>
+      <!-- NAVBAR -->
+    <nav class="top-navbar">
+      <i class="bi bi-list toggle-sidebar nav-hamburger"></i>
 
-        <div class="navbar-right">
-          <img src="{{ url_for('static', filename='img/darkmode.svg') }}" class="nav-icon" alt="Dark Mode" />
-          <img
-            src="{{ url_for('static', filename='img/notification.svg') }}"
-            class="nav-icon"
-            alt="Notification"
+      <div class="navbar-right">
+        <!-- Notification Icon with Badge -->
+        <div class="notification-wrapper">
+          <img 
+            src="{{ url_for('static', filename='img/notification.svg') }}" 
+            class="nav-icon notification-icon" 
+            alt="Notification" 
+            id="notificationBell"
           />
-
-          <div class="user-info">
-            <img
-              src="{{ user.profile_picture or 'https://i.pravatar.cc/40' }}"
-              alt="Profile"
-              class="user-avatar"
-            />
-            <div>
-              <strong>{{ user.nama }}</strong>
-              <small>{{ user.username }}</small>
+          <span class="notification-badge" id="notificationBadge">0</span>
+          
+          <!-- Notification Dropdown -->
+          <div class="notification-dropdown" id="notificationDropdown">
+            <div class="notification-header">
+              <h3>Notifikasi</h3>
+              <button class="mark-all-read" id="markAllRead">Tandai Semua Dibaca</button>
+            </div>
+            <div class="notification-list" id="notificationList">
+              <!-- Notifications will be loaded here -->
+              <div class="notification-loading">
+                <div class="spinner"></div>
+                <p>Memuat notifikasi...</p>
+              </div>
             </div>
           </div>
         </div>
-      </nav>
+
+        <div class="user-info">
+          <img src="{{ user.profile_picture or 'https://i.pravatar.cc/40' }}" alt="Profile" class="user-avatar" />
+          <div class="user-info-text">
+            <strong>{{ user.nama }}</strong>
+            <small>Mahasiswa</small>
+          </div>
+        </div>
+      </div>
+    </nav>
 
       <main>
         <div class="profile-container">
           <div class="profile-card">
-
+            
             <!-- Avatar -->
             <div class="profile-avatar">
-              <div class="avatar-circle"></div>
-              <button class="avatar-edit">
+              <div class="avatar-circle">
+                {% if user.profile_picture %}
+                <img src="{{ user.profile_picture }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />
+                {% endif %}
+              </div>
+              <button class="avatar-edit" id="openAvatarModal">
                 <img src="{{ url_for('static', filename='img/pensil.svg') }}" alt="Edit" />
               </button>
             </div>
+
+            <!-- Modal -->
+            <div class="modal-overlay" id="avatarModal">
+              <div class="modal-content">
+                <button class="modal-close" id="closeAvatarModal">&times;</button>
+
+                <h2>Ubah Foto Profil</h2>
+
+                <div class="modal-avatar">
+                  <div class="avatar-preview" id="avatarPreview">
+                    {% if user.profile_picture %}
+                    <img src="{{ user.profile_picture }}" alt="Preview" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />
+                    {% endif %}
+                  </div>
+                </div>
+
+                <input type="file" id="profilePictureInput" accept="image/jpeg,image/png" style="display: none;" />
+                <button type="button" class="btn-gallery" id="btnSelectPhoto">
+                   <i class="bi bi-image me-2"></i>Pilih Foto dari Galeri
+                </button>
+
+                <p class="modal-info">Format: JPG, PNG. Maksimal 2MB</p>
+
+                <div class="modal-actions">
+                  <button type="button" class="btn-cancel" id="btnCancelPhoto">Batal</button>
+                  <button type="button" class="btn-save" id="btnSavePhoto">Simpan Foto</button>
+                </div>
+              </div>
+            </div>
+
 
             <!-- Form Profile -->
             <form class="profile-form">
@@ -103,52 +158,22 @@
               <div class="form-grid">
                 <div class="form-group">
                   <label>Your Name</label>
-                  <input type="text"/>
+                    <input type="text" value="{{ user.nama }}" disabled/>
                 </div>
 
                 <div class="form-group">
                   <label>User Name</label>
-                  <input type="text"/>
-                </div>
-
-                <div class="form-group">
-                  <label>Email</label>
-                  <input type="email"/>
-                </div>
-
-                <div class="form-group">
-                  <label>Password</label>
-                  <input type="password"/>
-                </div>
-
-                <div class="form-group">
-                  <label>Date of Birth</label>
-                  <input type="date"/>
-                </div>
-
-                <div class="form-group">
-                  <label>Present Address</label>
-                  <input type="text"/>
-                </div>
-
-                <div class="form-group">
-                  <label>Permanent Address</label>
-                  <input type="text"/>
-                </div>
-
+                  <input type="text" value="{{ user.username }}" disabled/>
+                </div>  
+              
                 <div class="form-group">
                   <label>City</label>
-                  <input type="text"/>
-                </div>
-
-                <div class="form-group">
-                  <label>Postal Code</label>
-                  <input type="text"/>
+                  <input type="text" value="Bandung" disabled/>
                 </div>
 
                 <div class="form-group">
                   <label>Country</label>
-                  <input type="text"/>
+                  <input type="text" value="Indonesia" disabled/>
                 </div>
               </div>
 
@@ -169,11 +194,12 @@
 
           <div class="logout-actions">
             <button class="btn-logout-cancel" id="logoutCancel">Tidak</button>
-            <a href="{{ url_for('login') }}" class="btn-logout-confirm">Ya</a>
+            <button type="button" class="btn-logout-confirm" id="logoutConfirm">Ya</button>
           </div>
         </div>
       </div>
       <script src="{{ url_for('static', filename='js/profile.js') }}"></script>
+      <script src="{{ url_for('static', filename='js/notification.js') }}"></script>
     </section>
   </body>
 </html>

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo-head.svg') }}">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Daftar Kegiatan</title>
@@ -22,6 +23,11 @@
             src="{{ url_for('static', filename='img/logo.svg') }}"
             class="omnimap-logo-full"
             alt="OmniMap Logo"
+          />
+          <img
+          src="{{ url_for('static', filename='img/logo-head.svg') }}"
+          class="omnimap-logo-collapsed"
+          alt="OmniMap Logo"
           />
         </a>
         <i class="bi bi-list toggle-sidebar sidebar-hamburger"></i>
@@ -60,30 +66,46 @@
 
 
     <section id="content">
-      <nav class="top-navbar">
-        <i class="bi bi-list toggle-sidebar nav-hamburger"></i>
+      <!-- NAVBAR -->
+    <nav class="top-navbar">
+      <i class="bi bi-list toggle-sidebar nav-hamburger"></i>
 
-        <div class="navbar-right">
-          <img src="{{ url_for('static', filename='img/darkmode.svg') }}" class="nav-icon" alt="Dark Mode" />
-          <img
-            src="{{ url_for('static', filename='img/notification.svg') }}"
-            class="nav-icon"
-            alt="Notification"
+      <div class="navbar-right">
+        <!-- Notification Icon with Badge -->
+        <div class="notification-wrapper">
+          <img 
+            src="{{ url_for('static', filename='img/notification.svg') }}" 
+            class="nav-icon notification-icon" 
+            alt="Notification" 
+            id="notificationBell"
           />
-
-          <div class="user-info">
-            <img
-              src="{{ user.profile_picture or 'https://i.pravatar.cc/40' }}"
-              alt="Profile"
-              class="user-avatar"
-            />
-            <div>
-              <strong>{{ user.nama }}</strong>
-              <small>{{ user.username }}</small>
+          <span class="notification-badge" id="notificationBadge">0</span>
+          
+          <!-- Notification Dropdown -->
+          <div class="notification-dropdown" id="notificationDropdown">
+            <div class="notification-header">
+              <h3>Notifikasi</h3>
+              <button class="mark-all-read" id="markAllRead">Tandai Semua Dibaca</button>
+            </div>
+            <div class="notification-list" id="notificationList">
+              <!-- Notifications will be loaded here -->
+              <div class="notification-loading">
+                <div class="spinner"></div>
+                <p>Memuat notifikasi...</p>
+              </div>
             </div>
           </div>
         </div>
-      </nav>
+
+        <div class="user-info">
+          <img src="{{ user.profile_picture or 'https://i.pravatar.cc/40' }}" alt="Profile" class="user-avatar" />
+          <div class="user-info-text">
+            <strong>{{ user.nama }}</strong>
+            <small>Mahasiswa</small>
+          </div>
+        </div>
+      </div>
+    </nav>
 
       <!-- Kategori Kegiatan -->
       <main>
@@ -173,6 +195,51 @@
               </select>
             </div>
 
+            <!-- TAMBAH INI -->
+            <div class="form-group">
+              <label>Trait Kepribadian yang Dibutuhkan</label>
+              <div class="traits-checkbox-container">
+                <label class="trait-checkbox">
+                  <input type="checkbox" name="traits" value="extraversion">
+                  <span>Extraversion (Energik, Suka Bersosialisasi)</span>
+                </label>
+                <label class="trait-checkbox">
+                  <input type="checkbox" name="traits" value="agreeableness">
+                  <span>Agreeableness (Kooperatif, Ramah)</span>
+                </label>
+                <label class="trait-checkbox">
+                  <input type="checkbox" name="traits" value="conscientiousness">
+                  <span>Conscientiousness (Terorganisir, Bertanggung Jawab)</span>
+                </label>
+                <label class="trait-checkbox">
+                  <input type="checkbox" name="traits" value="openness">
+                  <span>Openness (Kreatif, Terbuka pada Ide Baru)</span>
+                </label>
+                <label class="trait-checkbox">
+                  <input type="checkbox" name="traits" value="leadership">
+                  <span>Leadership (Kepemimpinan)</span>
+                </label>
+                <label class="trait-checkbox">
+                  <input type="checkbox" name="traits" value="creativity">
+                  <span>Creativity (Kreativitas)</span>
+                </label>
+                <label class="trait-checkbox">
+                  <input type="checkbox" name="traits" value="teamwork">
+                  <span>Teamwork (Kerja Tim)</span>
+                </label>
+                <label class="trait-checkbox">
+                  <input type="checkbox" name="traits" value="organization">
+                  <span>Organization (Organisasi)</span>
+                </label>
+                <label class="trait-checkbox">
+                  <input type="checkbox" name="traits" value="communication">
+                  <span>Communication (Komunikasi)</span>
+                </label>
+              </div>
+              <small style="color: #6b7280; font-size: 12px; margin-top: 8px; display: block;">
+                Pilih minimal 1 trait yang sesuai dengan kegiatan
+              </small>
+            </div>
             <div class="form-group">
               <label for="namaKegiatan">Nama Kegiatan</label>
               <input type="text" id="namaKegiatan" name="nama" placeholder="Masukkan nama kegiatan..." />
@@ -200,15 +267,23 @@
             </div>
 
             <div class="form-group multiple-input">
-              <label for="persyaratan">Persyaratan Kegiatan</label>
-              <input type="text" id="persyaratan" name="persyaratan" placeholder="Masukkan persyaratan kegiatan..." />
-              <button type="button"><i class="bi bi-plus-lg"></i></button>
+              <label>Persyaratan Kegiatan</label>
+              <div id="persyaratanContainer">
+                <div class="input-row">
+                  <input type="text" name="persyaratan[]" placeholder="Masukkan persyaratan kegiatan..." />
+                  <button type="button" class="btn-add-input" id="btnAddPersyaratan"><i class="bi bi-plus-lg"></i></button>
+                </div>
+              </div>
             </div>
 
             <div class="form-group multiple-input">
-              <label for="manfaat">Manfaat & Keuntungan</label>
-              <input type="text" id="manfaat" name="manfaat" placeholder="Masukkan manfaat & keuntungan kegiatan..." />
-              <button type="button"><i class="bi bi-plus-lg"></i></button>
+              <label>Manfaat & Keuntungan</label>
+              <div id="manfaatContainer">
+                <div class="input-row">
+                  <input type="text" name="manfaat[]" placeholder="Masukkan manfaat & keuntungan kegiatan..." />
+                  <button type="button" class="btn-add-input" id="btnAddManfaat"><i class="bi bi-plus-lg"></i></button>
+                </div>
+              </div>
             </div>
 
             <div class="form-group icon-input">
@@ -223,8 +298,12 @@
             </div>
 
             <div class="form-group">
-              <label for="kontak">Informasi Kontak</label>
-              <textarea id="kontak" name="kontak" placeholder="Masukkan informasi kontak kegiatan..."></textarea>
+              <label>Informasi Kontak</label>
+              <div class="contact-fields">
+                <input type="text" id="kontakName" name="kontakName" placeholder="Nama Narahubung..." />
+                <input type="tel" id="kontakPhone" name="kontakPhone" placeholder="Nomor WhatsApp (contoh: 081234567890)..." />
+                <input type="email" id="kontakEmail" name="kontakEmail" placeholder="Email kontak..." />
+              </div>
             </div>
 
           </div>
@@ -234,6 +313,177 @@
             <button class="btn-upload" id="btnUploadKegiatan">Upload Data</button>
           </div>
 
+        </div>
+      </div>
+
+      <!-- Modal Edit Kegiatan -->
+      <div class="modal-overlay" id="modalEditKegiatan">
+
+        <div class="modal-container">
+
+          <div class="modal-header">
+            <div class="modal-title">
+              <h2>Edit Kegiatan</h2>
+              <p>Perbarui data kegiatan yang sudah ada</p>
+            </div>
+
+            <button class="modal-close" onclick="closeEditModal()">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+
+          <div class="modal-body">
+
+            <div class="form-group">
+              <label for="editKategori">Kategori Kegiatan</label>
+              <select id="editKategori" name="kategori">
+                <option value="">Pilih kategori...</option>
+                <option value="UKM">UKM</option>
+                <option value="Organisasi">Organisasi</option>
+                <option value="Kepanitiaan">Kepanitiaan</option>
+                <option value="Lomba">Lomba</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="editNamaKegiatan">Nama Kegiatan</label>
+              <input type="text" id="editNamaKegiatan" name="nama" placeholder="Masukkan nama kegiatan..." />
+            </div>
+
+            <div class="form-group">
+              <label for="editDeskripsi">Deskripsi</label>
+              <textarea id="editDeskripsi" name="deskripsi" placeholder="Deskripsi singkat tentang kegiatan ini..."></textarea>
+            </div>
+
+            <div class="form-group icon-input">
+              <label for="editDeadline">Deadline Kegiatan</label>
+              <input type="date" id="editDeadline" name="deadline" />
+              <i class="bi bi-calendar"></i>
+            </div>
+
+            <div class="form-group">
+              <label for="editPeserta">Jumlah Peserta Kegiatan</label>
+              <input type="text" id="editPeserta" name="peserta" placeholder="Masukkan jumlah peserta kegiatan..." />
+            </div>
+
+            <div class="form-group">
+              <label for="editLokasi">Lokasi Kegiatan</label>
+              <input type="text" id="editLokasi" name="lokasi" placeholder="Masukkan lokasi kegiatan..." />
+            </div>
+
+            <div class="form-group multiple-input">
+              <label>Persyaratan Kegiatan</label>
+              <div id="editPersyaratanContainer">
+                <div class="input-row">
+                  <input type="text" name="editPersyaratan[]" id="editPersyaratanFirst" placeholder="Masukkan persyaratan kegiatan..." />
+                  <button type="button" class="btn-add-input" id="editBtnAddPersyaratan"><i class="bi bi-plus-lg"></i></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group multiple-input">
+              <label>Manfaat & Keuntungan</label>
+              <div id="editManfaatContainer">
+                <div class="input-row">
+                  <input type="text" name="editManfaat[]" id="editManfaatFirst" placeholder="Masukkan manfaat & keuntungan kegiatan..." />
+                  <button type="button" class="btn-add-input" id="editBtnAddManfaat"><i class="bi bi-plus-lg"></i></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group icon-input">
+              <label for="editJadwal">Jadwal Kegiatan</label>
+              <input type="date" id="editJadwal" name="jadwal" />
+              <i class="bi bi-calendar"></i>
+            </div>
+
+            <div class="form-group">
+              <label for="editLink">Link Pendaftaran</label>
+              <input type="url" id="editLink" name="link" placeholder="Masukkan link pendaftaran..." />
+            </div>
+
+            <div class="form-group">
+              <label>Informasi Kontak</label>
+              <div class="contact-fields">
+                <input type="text" id="editKontakName" name="kontakName" placeholder="Nama Narahubung..." />
+                <input type="tel" id="editKontakPhone" name="kontakPhone" placeholder="Nomor WhatsApp (contoh: 081234567890)..." />
+                <input type="email" id="editKontakEmail" name="kontakEmail" placeholder="Email kontak..." />
+              </div>
+            </div>
+
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn-upload" id="btnSimpanPerubahan">Simpan Perubahan</button>
+            <button class="btn-upload" id="btnCancelEdit" style="background: #f3f4f6; color: #111827; margin-top: 10px;">Batal</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Modal Hapus Kegiatan -->
+      <div class="modal-overlay" id="modalDeleteKegiatan">
+        <div class="modal-container">
+          <div class="modal-header">
+            <div class="modal-title">
+              <h2>Hapus Kegiatan</h2>
+              <p>Konfirmasi untuk menghapus kegiatan berikut:</p>
+              <p style="font-weight: 700; color: #ce181b;" id="deleteKegiatanName"></p>
+            </div>
+            <button class="modal-close" onclick="closeDeleteModal()">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn-upload" id="btnConfirmDelete">Ya, Hapus</button>
+            <button class="btn-upload" id="btnCancelDelete" style="background: #f3f4f6; color: #111827; margin-top: 10px;">Batal</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Success  -->
+      <div class="modal-overlay" id="modalSuccess">
+        <div class="modal-container">
+          <div class="modal-body">
+            <img
+              src="{{ url_for('static', filename='img/login_success.svg') }}"
+              alt="Success"
+            />
+            <h5 id="successTitle">🎉 Berhasil!</h5>
+            <p id="successMessage">Operasi berhasil dilakukan</p>
+            <button class="btn-upload" onclick="closeSuccessModal()">OK</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Confirm Delete -->
+      <div class="modal-overlay" id="modalDeleteKegiatan">
+        <div class="modal-container modal-delete-container">
+          <div class="modal-body modal-delete-body">
+            <!-- Icon Circle -->
+            <div class="delete-icon-circle">
+              <i class="bi bi-trash3"></i>
+            </div>
+            
+            <!-- Title -->
+            <h5 class="delete-title">Hapus Kegiatan</h5>
+            
+            <!-- Description -->
+            <p class="delete-desc">Konfirmasi untuk menghapus kegiatan berikut:</p>
+            
+            <!-- Activity Name -->
+            <p id="deleteKegiatanName" class="delete-name"></p>
+            
+            <!-- Warning -->
+            <p class="delete-warning">Kegiatan yang dihapus tidak dapat dikembalikan</p>
+            
+            <!-- Button Container -->
+            <div class="delete-button-container">
+              <button class="btn-delete-cancel" id="btnCancelDelete">Batal</button>
+              <button class="btn-delete-confirm" id="btnConfirmDelete">Ya, Hapus</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -257,7 +507,12 @@
 
       <!-- Card Kegiatan -->
       {% for activity in activities %}
-      <div class="kegiatan-card" data-kategori="{{ activity.kategori }}">
+      <div
+        class="kegiatan-card"
+        data-id="{{ activity.id }}"
+        data-kategori="{{ activity.kategori }}"
+        data-detail-url="{{ url_for('admin_kegiatan_detail', activity_id=activity.id) }}"
+      >
         <div class="kegiatan-header">
           <div>
             <h3 class="kegiatan-title">{{ activity.nama }}</h3>
@@ -268,19 +523,50 @@
         </div>
 
         <div class="kegiatan-info">
-          <div class="info-item">
-            <img src="{{ url_for('static', filename='img/calendar.svg') }}" alt="Deadline">
-            <span>Deadline : {{ activity.deadline }}</span>
+          <div class="info-items-container">
+            <div class="info-item">
+              <img src="{{ url_for('static', filename='img/calendar.svg') }}" alt="Deadline">
+              <span>Deadline : {{ activity.deadline }}</span>
+            </div>
+
+            <div class="info-item">
+              <img src="{{ url_for('static', filename='img/person.svg') }}" alt="Peserta">
+              <span>Peserta {{ activity.peserta }}</span>
+            </div>
+
+            <div class="info-item">
+              <img src="{{ url_for('static', filename='img/location.svg') }}" alt="Lokasi">
+              <span>{{ activity.lokasi }}</span>
+            </div>
           </div>
 
-          <div class="info-item">
-            <img src="{{ url_for('static', filename='img/person.svg') }}" alt="Peserta">
-            <span>Peserta {{ activity.peserta }}</span>
-          </div>
-
-          <div class="info-item">
-            <img src="{{ url_for('static', filename='img/location.svg') }}" alt="Lokasi">
-            <span>{{ activity.lokasi }}</span>
+          <!-- Action Buttons -->
+          <div class="kegiatan-actions">
+            <button
+              class="btn-edit"
+              title="Edit Kegiatan"
+              data-id="{{ activity.id }}"
+              data-nama="{{ activity.nama|default('') }}"
+              data-deskripsi="{{ activity.deskripsi|default('') }}"
+              data-deadline="{{ activity.deadline|default('') }}"
+              data-peserta="{{ activity.peserta|default('') }}"
+              data-lokasi="{{ activity.lokasi|default('') }}"
+              data-jadwal="{{ activity.jadwal|default('') }}"
+              data-link="{{ activity.link|default('') }}"
+              data-kontak-name="{{ activity.kontak_name|default('') }}"
+              data-kontak-phone="{{ activity.kontak_phone|default('') }}"
+              data-kontak-email="{{ activity.kontak_email|default('') }}"
+            >
+              <i class="bi bi-pencil-square"></i>
+            </button>
+            <button
+              class="btn-delete"
+              title="Hapus Kegiatan"
+              data-id="{{ activity.id }}"
+              data-nama="{{ activity.nama|default('') }}"
+            >
+              <i class="bi bi-trash3"></i>
+            </button>
           </div>
         </div>
       </div>
@@ -301,5 +587,6 @@
       </div>
     </section>
     <script src="{{ url_for('static', filename='js/daftarkegiatan.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/notification.js') }}"></script>
   </body>
 </html>
