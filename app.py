@@ -3387,6 +3387,14 @@ except ImportError as e:
 except Exception as e:
     print(f"⚠️ Error registering ML routes: {e}")
 
+@app.route('/init-db-12345')
+def init_database():
+    try:
+        db.create_all()
+        return "✅ Database tables created successfully!", 200
+    except Exception as e:
+        return f"❌ Error: {str(e)}", 500
+
 if __name__ == '__main__':
     with app.app_context():
         # Create database tables
