@@ -7,8 +7,12 @@ class Config:
     """Base configuration"""
     SECRET_KEY = os.getenv('SECRET_KEY', 'your-secret-key-change-this')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+class DevelopmentConfig(Config):
+    """Development configuration"""
+    DEBUG = True
     
-    # PostgreSQL Configuration
+    # Development pakai env variables
     POSTGRES_USER = os.getenv('POSTGRES_USER', 'postgres')
     POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD', 'postgres')
     POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'localhost')
@@ -19,32 +23,18 @@ class Config:
         f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}'
         f'@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
     )
-    
-    # Fallback ke SQLite jika PostgreSQL gagal
-    SQLALCHEMY_DATABASE_URI_FALLBACK = 'sqlite:///omnimap.db'
-    
-    # Auto-detect which database is being used
-    @staticmethod
-    def get_current_db_type(app):
-        """Detect if using PostgreSQL or SQLite"""
-        uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
-        if 'postgresql' in uri:
-            return 'postgresql'
-        elif 'sqlite' in uri:
-            return 'sqlite'
-        return 'unknown'
-
-class DevelopmentConfig(Config):
-    """Development configuration"""
-    DEBUG = True
-    TESTING = False
 
 class ProductionConfig(Config):
     """Production configuration"""
     DEBUG = False
-    TESTING = False
+    
+    # Production pakai DATABASE_URL langsung dari Railway
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
+    
+    # Fix postgres:// to postgresql://
+    if SQLALCHEMY_DATABASE_URI and SQLALCHEMY_DATABASE_URI.startswith('postgres://'):
+        SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace('postgres://', 'postgresql://', 1)
 
-# Config mapping
 config_by_name = {
     'development': DevelopmentConfig,
     'production': ProductionConfig
