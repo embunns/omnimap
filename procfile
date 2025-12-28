@@ -1,1 +1,1 @@
-d:\Computing Project\omnimap+model\omni-embun
+web: gunicorn app:app
