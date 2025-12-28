@@ -22,11 +22,6 @@ pandas==2.1.4
 scikit-learn==1.3.0
 joblib==1.3.2
 
-# TensorFlow / PyTorch (Optional - Uncomment jika butuh)
-# tensorflow==2.15.0
-# torch==2.1.0
-# torchvision==0.16.0
-
 # ==================== DATA PROCESSING ====================
 openpyxl==3.1.2
 xlrd==2.0.1
@@ -36,16 +31,13 @@ python-dateutil==2.8.2
 reportlab==4.0.7
 matplotlib==3.8.2
 
-# ==================== GOOGLE GEMINI API ====================
-# SDK Terbaru (Wajib untuk kode 'from google import genai')
+# ==================== GOOGLE AI (YANG PENTING) ====================
+# 1. SDK BARU (Untuk fitur baru yang kita pakai di app.py)
 google-genai
 
-# SDK Lama & Dependencies (Disimpan untuk kompatibilitas kode lama)
+# 2. SDK LAMA (Untuk kode lama agar tidak rusak)
+# Kita hapus dependency anaknya biar PIP yang atur otomatis
 google-generativeai==0.8.3
-google-ai-generativelanguage==0.6.6
-google-api-core==2.15.0
-google-auth==2.26.2
-protobuf==4.25.1
 
 # ==================== API & HTTP ====================
 requests==2.31.0
@@ -57,6 +49,6 @@ Pillow==10.1.0
 # ==================== PRODUCTION SERVER ====================
 gunicorn==21.2.0
 
-# ==================== DEVELOPMENT TOOLS ====================
+# ==================== TOOLS ====================
 jupyter==1.0.0
 ipython==8.18.1
