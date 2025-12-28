@@ -6,6 +6,8 @@ Werkzeug==3.0.1
 
 # ==================== DATABASE ====================
 SQLAlchemy==2.0.23
+psycopg2-binary==2.9.9
+alembic==1.12.1
 
 # ==================== ENVIRONMENT & CONFIG ====================
 python-dotenv==1.0.0
@@ -15,89 +17,46 @@ PyJWT==2.8.0
 bcrypt==4.1.2
 
 # ==================== MACHINE LEARNING ====================
-numpy==1.24.3
-pandas==2.0.3
+numpy==1.26.2
+pandas==2.1.4
 scikit-learn==1.3.0
 joblib==1.3.2
 
-# TensorFlow (Optional - uncomment jika pakai deep learning)
+# TensorFlow / PyTorch (Optional - Uncomment jika butuh)
 # tensorflow==2.15.0
-
-# PyTorch (Optional - uncomment jika pakai PyTorch)
 # torch==2.1.0
 # torchvision==0.16.0
 
 # ==================== DATA PROCESSING ====================
-openpyxl==3.1.2          # Untuk read Excel files
-xlrd==2.0.1              # Untuk Excel support
+openpyxl==3.1.2
+xlrd==2.0.1
 python-dateutil==2.8.2
 
 # ==================== PDF GENERATION ====================
-reportlab==4.0.7         # Untuk generate PDF
-matplotlib==3.8.2        # Untuk charts di PDF
-
-# ==================== GOOGLE GEMINI API ====================
-google-generativeai==0.3.2
-
-# ==================== REDIS (Optional - untuk caching) ====================
-# redis==5.0.1
-# Flask-Caching==2.1.0
-
-# ==================== API & HTTP ====================
-requests==2.31.0
-
-# ==================== UTILITIES ====================
-python-multipart==0.0.6   # Untuk file upload
-Pillow==10.1.0            # Untuk image processing (jika ada upload foto)
-
-# ==================== PRODUCTION SERVER ====================
-gunicorn==21.2.0          # Production WSGI server (untuk deploy)
-
-# ==================== DEVELOPMENT TOOLS (Optional) ====================
-# Flask-DebugToolbar==0.14.1
-# pytest==7.4.3
-# pytest-flask==1.3.0
-
-# Existing dependencies
-Flask==3.0.0
-Flask-SQLAlchemy==3.1.1
-Werkzeug==3.0.1
 reportlab==4.0.7
 matplotlib==3.8.2
 
-# PostgreSQL
-psycopg2-binary==2.9.9
-python-dotenv==1.0.0
+# ==================== GOOGLE GEMINI API ====================
+# SDK Terbaru (Wajib untuk kode 'from google import genai')
+google-genai
 
-# Machine Learning
-scikit-learn==1.3.2
-pandas==2.1.3
-numpy==1.26.2
-openpyxl==3.1.2  # For reading Excel files
-
-# Database Migrations (Optional but recommended)
-alembic==1.12.1
-
-# Development tools (optional)
-jupyter==1.0.0
-ipython==8.18.1
-
+# SDK Lama & Dependencies (Disimpan untuk kompatibilitas kode lama)
 google-generativeai==0.8.3
 google-ai-generativelanguage==0.6.6
 google-api-core==2.15.0
 google-auth==2.26.2
 protobuf==4.25.1
 
-# PDF Generation
-reportlab==4.0.7
+# ==================== API & HTTP ====================
+requests==2.31.0
 
-Flask==3.0.0
-Flask-CORS==4.0.0
-psycopg2-binary==2.9.9
+# ==================== UTILITIES ====================
+python-multipart==0.0.6
+Pillow==10.1.0
+
+# ==================== PRODUCTION SERVER ====================
 gunicorn==21.2.0
-python-dotenv==1.0.0
-google-generativeai==0.3.2
-pandas==2.1.4
-numpy==1.26.2
-joblib==1.3.2
-Werkzeug==3.0.1
+
+# ==================== DEVELOPMENT TOOLS ====================
+jupyter==1.0.0
+ipython==8.18.1
