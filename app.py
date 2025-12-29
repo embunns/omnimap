@@ -2969,7 +2969,6 @@ def extract_angkatan_from_nim(nim):
     except:
         return None
 
-
 @app.route('/api/get-angkatan-list', methods=['GET'])
 def api_get_angkatan_list():
     """Get unique list of angkatan from existing mahasiswa"""
@@ -3004,7 +3003,6 @@ def api_get_angkatan_list():
             'success': False,
             'error': str(e)
         }), 500
-
 
 # ===== GANTI FUNGSI api_mahasiswa_rentan YANG LAMA DENGAN INI =====
 

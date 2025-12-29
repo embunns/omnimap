@@ -80,7 +80,59 @@ function setupEventListeners() {
     logoutConfirm.addEventListener("click", performLogout);
   }
 }
+// ✅ TAMBAHKAN FUNGSI INI - Populate dropdown angkatan
+async function loadAngkatanOptions() {
+  try {
+    const response = await fetch('/api/get-angkatan-list');
+    const data = await response.json();
+    
+    if (data.success && data.angkatan_list) {
+      const filterAngkatan = document.getElementById("filterAngkatan");
+      
+      // Clear existing options (except "Semua Angkatan")
+      filterAngkatan.innerHTML = '<option value="">Semua Angkatan</option>';
+      
+      // Add angkatan options
+      data.angkatan_list.forEach(angkatan => {
+        const option = document.createElement('option');
+        option.value = angkatan;
+        option.textContent = `Angkatan 20${angkatan}`;
+        filterAngkatan.appendChild(option);
+      });
+      
+      console.log(`✅ Loaded ${data.angkatan_list.length} angkatan options`);
+    }
+  } catch (error) {
+    console.error('Error loading angkatan options:', error);
+  }
+}
 
+async function loadMahasiswaData() {
+  const loadingIndicator = document.getElementById("loadingIndicator");
+  const tableBody = document.getElementById("mahasiswaTableBody");
+  const emptyState = document.getElementById("emptyState");
+  const filterRisk = document.getElementById("filterRisk");
+  const filterAngkatan = document.getElementById("filterAngkatan");
+
+  try {
+    if (loadingIndicator) loadingIndicator.style.display = "block";
+
+    // Build query parameters
+    const params = new URLSearchParams();
+    if (filterRisk && filterRisk.value) {
+      params.append("risk_level", filterRisk.value);
+    }
+    if (filterAngkatan && filterAngkatan.value) {
+      params.append("angkatan", filterAngkatan.value);
+    }
+
+    const response = await fetch(`/api/mahasiswa-rentan?${params.toString()}`);
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch data");
+    }
+
+    const data = await response.json();
 // Debounce function for search
 function debounce(func, wait) {
   let timeout;
