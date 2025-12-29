@@ -3146,7 +3146,81 @@ def api_mahasiswa_rentan():
             'success': False,
             'error': f'Terjadi kesalahan: {str(e)}'
         }), 500
-
+@app.route('/api/activity-detail/<int:activity_id>', methods=['GET'])
+def api_get_activity_detail_for_edit(activity_id):
+    """Get detailed information for editing activity (admin only)"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    
+    user = db.session.get(User, session['user_id'])
+    if not user or not user.is_admin:
+        return jsonify({'success': False, 'error': 'Forbidden'}), 403
+    
+    try:
+        activity = Activity.query.get(activity_id)
+        
+        if not activity:
+            return jsonify({'success': False, 'error': 'Activity not found'}), 404
+        
+        import json
+        
+        # Parse JSON fields
+        persyaratan = []
+        if activity.persyaratan_json:
+            try:
+                persyaratan = json.loads(activity.persyaratan_json)
+            except:
+                persyaratan = []
+        
+        manfaat = []
+        if activity.manfaat_json:
+            try:
+                manfaat = json.loads(activity.manfaat_json)
+            except:
+                manfaat = []
+        
+        jadwal = ''
+        if activity.jadwal_json:
+            try:
+                jadwal_data = json.loads(activity.jadwal_json)
+                jadwal = jadwal_data.get('tanggal', '') if isinstance(jadwal_data, dict) else ''
+            except:
+                jadwal = ''
+        
+        contact = None
+        if activity.contact_json:
+            try:
+                contact = json.loads(activity.contact_json)
+            except:
+                contact = None
+        
+        return jsonify({
+            'success': True,
+            'activity': {
+                'id': activity.id,
+                'nama': activity.nama,
+                'kategori': activity.kategori,
+                'deskripsi': activity.deskripsi,
+                'deadline': activity.deadline,
+                'peserta': activity.peserta,
+                'lokasi': activity.lokasi,
+                'persyaratan': persyaratan,
+                'manfaat': manfaat,
+                'jadwal': jadwal,
+                'link': activity.link or '',
+                'contact': contact
+            }
+        })
+        
+    except Exception as e:
+        print(f"Error fetching activity detail: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': f'Terjadi kesalahan: {str(e)}'
+        }), 500
+    
 @app.route('/api/mahasiswa-detail/<int:user_id>', methods=['GET'])
 def api_mahasiswa_detail(user_id):
     """Get detailed assessment for a specific student"""
