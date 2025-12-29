@@ -25,7 +25,9 @@ from functools import lru_cache
 import hashlib
 
 load_dotenv()
-
+_cache = {}
+_request_count = {'chatbot': 0, 'personality': 0, 'last_reset': time.time()}
+_last_api_call = {}
 app = Flask(__name__)
 
 # Config
