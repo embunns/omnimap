@@ -103,12 +103,15 @@ async function populateAngkatanFilter() {
         filterAngkatan.innerHTML = '<option value="">Semua Angkatan</option>';
         
         // Add angkatan options (sorted descending - newest first)
+        // Add angkatan options (sorted descending - newest first)
         data.angkatan_list.forEach(angkatan => {
           const option = document.createElement('option');
-          option.value = angkatan;
-          option.textContent = `Angkatan 20${angkatan}`;
+          option.value = angkatan;  // Value tetap 2 digit: '22', '23'
+          option.textContent = `Angkatan 20${angkatan}`;  // Display: 'Angkatan 2022'
           filterAngkatan.appendChild(option);
         });
+        
+        console.log('✅ Angkatan filter populated:', data.angkatan_list);
       }
     }
   } catch (error) {

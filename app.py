@@ -2952,7 +2952,6 @@ def extract_angkatan_from_nim(nim):
     """
     Extract angkatan (2 digit) from NIM
     Format NIM: 1301220198 → angkatan = 22 (posisi 5-6)
-    Format NIM: 1301230198 → angkatan = 23 (posisi 5-6)
     
     Returns: string '22', '23', etc or None if invalid
     """
@@ -2960,8 +2959,8 @@ def extract_angkatan_from_nim(nim):
         return None
     
     try:
-        # Extract 2 digit di posisi 5-6 (index 4-6)
-        angkatan = nim[4:6]
+        # Extract 2 digit di posisi 5-6 (Python index 4:6)
+        angkatan = str(nim)[4:6]
         
         # Validate it's numeric
         if angkatan.isdigit():
@@ -3029,11 +3028,13 @@ def api_mahasiswa_rentan():
         query = User.query.filter_by(is_admin=False, status_tes='Selesai')
         
         # ✅ FIXED: Filter by angkatan using SUBSTRING on NIM (position 5-6)
+        # ✅ Filter by angkatan - extract from NIM position 5-6 (Python 0-indexed = 4:6)
         if angkatan:
-            # Use SQLAlchemy's func.substr to get characters at position 5-6
-            # SUBSTR(nim, 5, 2) untuk SQL (1-indexed)
+            # Untuk SQLAlchemy dengan MySQL/PostgreSQL (1-indexed)
+            # SUBSTRING(nim FROM 5 FOR 2) = angkatan
+            from sqlalchemy import func, cast, String
             query = query.filter(
-                db.func.substr(User.nim, 5, 2) == angkatan
+                func.substring(User.nim, 5, 2) == angkatan
             )
         
         # Search filter
@@ -3201,9 +3202,11 @@ def api_export_mahasiswa_rentan():
         query = User.query.filter_by(is_admin=False, status_tes='Selesai')
         
         # ✅ FIXED: Filter by angkatan using SUBSTRING
+        # ✅ Filter by angkatan
         if angkatan:
+            from sqlalchemy import func
             query = query.filter(
-                db.func.substr(User.nim, 5, 2) == angkatan
+                func.substring(User.nim, 5, 2) == angkatan
             )
         
         # Search filter
