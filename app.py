@@ -2960,13 +2960,15 @@ def extract_angkatan_from_nim(nim):
     
     try:
         # Extract 2 digit di posisi 5-6 (Python index 4:6)
+        # Contoh: '1301220198'[4:6] = '22'
         angkatan = str(nim)[4:6]
         
         # Validate it's numeric
         if angkatan.isdigit():
             return angkatan
         return None
-    except:
+    except Exception as e:
+        print(f"❌ Error extracting angkatan from {nim}: {e}")
         return None
 
 @app.route('/api/get-angkatan-list', methods=['GET'])
@@ -2980,8 +2982,8 @@ def api_get_angkatan_list():
         return jsonify({'error': 'Forbidden'}), 403
     
     try:
-        # Get all non-admin users
-        all_students = User.query.filter_by(is_admin=False).all()
+        # Get all non-admin users with completed tests
+        all_students = User.query.filter_by(is_admin=False, status_tes='Selesai').all()
         
         # Extract unique angkatan
         angkatan_set = set()
@@ -2990,21 +2992,24 @@ def api_get_angkatan_list():
             if angkatan:
                 angkatan_set.add(angkatan)
         
-        # Sort descending (newest first)
+        # Sort descending (newest first: 24, 23, 22...)
         angkatan_list = sorted(list(angkatan_set), reverse=True)
+        
+        print(f"✅ Found angkatan: {angkatan_list}")  # Debug log
         
         return jsonify({
             'success': True,
-            'angkatan_list': angkatan_list
+            'angkatan_list': angkatan_list  # Return ['24', '23', '22']
         })
         
     except Exception as e:
+        print(f"❌ Error in get_angkatan_list: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'success': False,
             'error': str(e)
         }), 500
-
-# ===== GANTI FUNGSI api_mahasiswa_rentan YANG LAMA DENGAN INI =====
 
 @app.route('/api/mahasiswa-rentan', methods=['GET'])
 def api_mahasiswa_rentan():

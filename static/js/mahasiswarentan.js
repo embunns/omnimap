@@ -17,6 +17,9 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
+  // ✅ TAMBAHKAN INI - Load angkatan options SEBELUM load data
+  loadAngkatanOptions();
+
   // Load mahasiswa data
   loadMahasiswaData();
 
@@ -80,7 +83,7 @@ function setupEventListeners() {
     logoutConfirm.addEventListener("click", performLogout);
   }
 }
-// ✅ TAMBAHKAN FUNGSI INI - Populate dropdown angkatan
+// ✅ FIXED: Populate dropdown angkatan dengan format 20XX
 async function loadAngkatanOptions() {
   try {
     const response = await fetch('/api/get-angkatan-list');
@@ -92,44 +95,20 @@ async function loadAngkatanOptions() {
       // Clear existing options (except "Semua Angkatan")
       filterAngkatan.innerHTML = '<option value="">Semua Angkatan</option>';
       
-      // Add angkatan options
+      // Add angkatan options dengan format lengkap "Angkatan 2022"
       data.angkatan_list.forEach(angkatan => {
         const option = document.createElement('option');
-        option.value = angkatan;
-        option.textContent = `Angkatan 20${angkatan}`;
+        option.value = angkatan; // value tetap '22', '23', dst
+        option.textContent = `Angkatan 20${angkatan}`; // display "Angkatan 2022"
         filterAngkatan.appendChild(option);
       });
       
-      console.log(`✅ Loaded ${data.angkatan_list.length} angkatan options`);
+      console.log(`✅ Loaded ${data.angkatan_list.length} angkatan options:`, data.angkatan_list);
+    } else {
+      console.error('❌ Failed to load angkatan:', data);
     }
   } catch (error) {
-    console.error('Error loading angkatan options:', error);
-  }
-}
-
-async function loadAngkatanOptions() {
-  try {
-    const response = await fetch('/api/get-angkatan-list');
-    const data = await response.json();
-    
-    if (data.success && data.angkatan_list) {
-      const filterAngkatan = document.getElementById("filterAngkatan");
-      
-      // Clear existing options (except "Semua Angkatan")
-      filterAngkatan.innerHTML = '<option value="">Semua Angkatan</option>';
-      
-      // Add angkatan options
-      data.angkatan_list.forEach(angkatan => {
-        const option = document.createElement('option');
-        option.value = angkatan;
-        option.textContent = `Angkatan 20${angkatan}`;
-        filterAngkatan.appendChild(option);
-      });
-      
-      console.log(`✅ Loaded ${data.angkatan_list.length} angkatan options`);
-    }
-  } catch (error) {
-    console.error('Error loading angkatan options:', error);
+    console.error('❌ Error loading angkatan options:', error);
   }
 }
 // Debounce function for search
