@@ -2948,6 +2948,66 @@ def assess_critical_items(user):
     
     return assessment
 
+def extract_angkatan_from_nim(nim):
+    """
+    Extract angkatan (2 digit) from NIM
+    Format NIM: 1301220198 → angkatan = 22 (posisi 5-6)
+    Format NIM: 1301230198 → angkatan = 23 (posisi 5-6)
+    
+    Returns: string '22', '23', etc or None if invalid
+    """
+    if not nim or len(nim) < 6:
+        return None
+    
+    try:
+        # Extract 2 digit di posisi 5-6 (index 4-6)
+        angkatan = nim[4:6]
+        
+        # Validate it's numeric
+        if angkatan.isdigit():
+            return angkatan
+        return None
+    except:
+        return None
+
+
+@app.route('/api/get-angkatan-list', methods=['GET'])
+def api_get_angkatan_list():
+    """Get unique list of angkatan from existing mahasiswa"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    user = db.session.get(User, session['user_id'])
+    if not user.is_admin:
+        return jsonify({'error': 'Forbidden'}), 403
+    
+    try:
+        # Get all non-admin users
+        all_students = User.query.filter_by(is_admin=False).all()
+        
+        # Extract unique angkatan
+        angkatan_set = set()
+        for student in all_students:
+            angkatan = extract_angkatan_from_nim(student.nim)
+            if angkatan:
+                angkatan_set.add(angkatan)
+        
+        # Sort descending (newest first)
+        angkatan_list = sorted(list(angkatan_set), reverse=True)
+        
+        return jsonify({
+            'success': True,
+            'angkatan_list': angkatan_list
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+# ===== GANTI FUNGSI api_mahasiswa_rentan YANG LAMA DENGAN INI =====
 
 @app.route('/api/mahasiswa-rentan', methods=['GET'])
 def api_mahasiswa_rentan():
@@ -2961,18 +3021,19 @@ def api_mahasiswa_rentan():
     
     try:
         # Get query parameters
-        angkatan = request.args.get('angkatan', '')
+        angkatan = request.args.get('angkatan', '')  # Format: '22', '23', '24'
         search = request.args.get('search', '')
         risk_filter = request.args.get('risk_level', '')
         
         # Base query - mahasiswa with completed tests
         query = User.query.filter_by(is_admin=False, status_tes='Selesai')
         
-        # Filter by angkatan (2 digit pertama NIM)
+        # ✅ FIXED: Filter by angkatan using SUBSTRING on NIM (position 5-6)
         if angkatan:
-            # Gunakan substring untuk match 2 digit pertama NIM
+            # Use SQLAlchemy's func.substr to get characters at position 5-6
+            # SUBSTR(nim, 5, 2) untuk SQL (1-indexed)
             query = query.filter(
-                db.func.substr(User.nim, 1, 2) == angkatan
+                db.func.substr(User.nim, 5, 2) == angkatan
             )
         
         # Search filter
@@ -3132,16 +3193,18 @@ def api_export_mahasiswa_rentan():
         from flask import make_response
         
         # Get query parameters (sama seperti di api_mahasiswa_rentan)
-        angkatan = request.args.get('angkatan', '')
+        angkatan = request.args.get('angkatan', '')  # Format: '22', '23', '24'
         search = request.args.get('search', '')
         risk_filter = request.args.get('risk_level', '')
         
         # Base query - mahasiswa with completed tests
         query = User.query.filter_by(is_admin=False, status_tes='Selesai')
         
-        # Filter by angkatan
+        # ✅ FIXED: Filter by angkatan using SUBSTRING
         if angkatan:
-            query = query.filter(User.nim.like(f'{angkatan}%'))
+            query = query.filter(
+                db.func.substr(User.nim, 5, 2) == angkatan
+            )
         
         # Search filter
         if search:
