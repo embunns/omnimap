@@ -175,13 +175,15 @@ function filterMahasiswa() {
     
     const searchInput = document.getElementById('searchInput');
     const filterAngkatan = document.getElementById('filterAngkatan');
+    const filterRisk = document.getElementById('filterRisk'); // Tambahkan ini jika ada filter risk level
     
     const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
     const angkatanFilter = filterAngkatan ? filterAngkatan.value : '';
+    const riskFilter = filterRisk ? filterRisk.value : ''; // Tambahkan ini
     
     let filteredData = window.mahasiswaData;
     
-    // Apply search filter
+    // Apply search filter (nama atau NIM)
     if (searchTerm) {
         filteredData = filteredData.filter(m => 
             m.nama.toLowerCase().includes(searchTerm) ||
@@ -189,11 +191,27 @@ function filterMahasiswa() {
         );
     }
     
-    // Apply angkatan filter
+    // Apply angkatan filter (2 digit pertama NIM)
     if (angkatanFilter) {
-        filteredData = filteredData.filter(m => 
-            m.nim.startsWith(angkatanFilter)
-        );
+        filteredData = filteredData.filter(m => {
+            // Ambil 2 digit pertama dari NIM untuk tahun angkatan
+            const nimYear = m.nim.substring(0, 2);
+            return nimYear === angkatanFilter;
+        });
+    }
+    
+    // Apply risk level filter
+    if (riskFilter) {
+        filteredData = filteredData.filter(m => {
+            // Map kategori ke risk level
+            const riskMap = {
+                'Sangat Rentan': 'critical',
+                'Rentan Tinggi': 'high',
+                'Rentan Sedang': 'medium',
+                'Perhatian': 'low'
+            };
+            return riskMap[m.kategori] === riskFilter;
+        });
     }
     
     // Re-number the filtered data

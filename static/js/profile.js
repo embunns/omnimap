@@ -208,13 +208,6 @@ if (btnSavePhoto) {
       });
 
       const data = await response.json();
-
-      if (data.success) {
-        alert("Foto profil berhasil diperbarui!");
-        window.location.reload();
-      } else {
-        alert("Gagal memperbarui foto profil: " + data.message);
-      }
     } catch (error) {
       console.error("Error updating profile picture:", error);
       alert("Terjadi kesalahan saat memperbarui foto profil.");

@@ -2963,14 +2963,17 @@ def api_mahasiswa_rentan():
         # Get query parameters
         angkatan = request.args.get('angkatan', '')
         search = request.args.get('search', '')
-        risk_filter = request.args.get('risk_level', '')  # critical, high, medium
+        risk_filter = request.args.get('risk_level', '')
         
         # Base query - mahasiswa with completed tests
         query = User.query.filter_by(is_admin=False, status_tes='Selesai')
         
-        # Filter by angkatan
+        # Filter by angkatan (2 digit pertama NIM)
         if angkatan:
-            query = query.filter(User.nim.like(f'{angkatan}%'))
+            # Gunakan substring untuk match 2 digit pertama NIM
+            query = query.filter(
+                db.func.substr(User.nim, 1, 2) == angkatan
+            )
         
         # Search filter
         if search:
@@ -3078,7 +3081,6 @@ def api_mahasiswa_rentan():
             'success': False,
             'error': f'Terjadi kesalahan: {str(e)}'
         }), 500
-
 
 @app.route('/api/mahasiswa-detail/<int:user_id>', methods=['GET'])
 def api_mahasiswa_detail(user_id):
