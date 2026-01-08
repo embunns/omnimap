@@ -107,9 +107,11 @@
               <button type="submit" class="btn btn-login w-100" id="btn-login">
                 Sign in
               </button>
+              <div class="text-center mt-4 mb-3">
               <a href="#" class="dummy-account-link" data-bs-toggle="modal" data-bs-target="#dummyAccountModal">
                 <b>Lihat Akun Dummy</b>
               </a>
+              </div>
               <div class="text-center mt-3">
 
             </form>
@@ -302,6 +304,67 @@
         });
       });
     });
+    // Fix modal backdrop issue
+const dummyModal = document.getElementById('dummyAccountModal');
+if (dummyModal) {
+  dummyModal.addEventListener('show.bs.modal', function () {
+    // Remove any existing backdrops
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+      if (backdrop.style.zIndex !== '1040') {
+        backdrop.remove();
+      }
+    });
+  });
+
+  dummyModal.addEventListener('hidden.bs.modal', function () {
+    // Clean up backdrops when modal closes
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+      backdrop.remove();
+    });
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+  });
+}
+
+// Copy functionality for dummy accounts
+document.querySelectorAll('.copy-text').forEach(cell => {
+  cell.addEventListener('click', function(e) {
+    e.stopPropagation(); // Prevent modal from closing
+    const text = this.textContent.trim();
+    
+    navigator.clipboard.writeText(text).then(() => {
+      // Visual feedback
+      const originalBg = this.style.backgroundColor;
+      const originalColor = this.style.color;
+      
+      this.style.backgroundColor = '#4caf50';
+      this.style.color = 'white';
+      
+      setTimeout(() => {
+        this.style.backgroundColor = originalBg;
+        this.style.color = originalColor;
+      }, 300);
+    }).catch(err => {
+      console.error('Failed to copy:', err);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      // Visual feedback for fallback
+      this.style.backgroundColor = '#4caf50';
+      this.style.color = 'white';
+      setTimeout(() => {
+        this.style.backgroundColor = '';
+        this.style.color = '';
+      }, 300);
+    });
+  });
+});
     </script>
     
   </body>

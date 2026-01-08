@@ -464,19 +464,35 @@ html {
   .modal-body p {
     font-size: 0.85rem;
   }
+  /* Fix modal z-index issues */
+.modal-backdrop {
+  z-index: 1040 !important;
+}
+
+.modal {
+  z-index: 1050 !important;
+}
+
+/* Pastikan modal content bisa diklik */
+.modal-content {
+  position: relative;
+  z-index: 1051;
+}
   /* Style untuk link dummy account */
+/* Style untuk link dummy account */
 .dummy-account-link {
-  color: #6c757d;
+  color: #dc3545; /* Warna merah Bootstrap */
   text-decoration: none;
   font-size: 14px;
-  transition: color 0.3s;
+  transition: all 0.3s;
+  display: inline-block;
 }
 
 .dummy-account-link:hover {
-  color: #495057;
+  color: #bb2d3b; /* Merah lebih gelap saat hover */
   text-decoration: underline;
+  transform: translateY(1px);
 }
-
 /* Style untuk teks yang bisa dicopy */
 .copy-text {
   cursor: pointer;
