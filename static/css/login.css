@@ -464,6 +464,33 @@ html {
   .modal-body p {
     font-size: 0.85rem;
   }
+  /* Style untuk link dummy account */
+.dummy-account-link {
+  color: #6c757d;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.3s;
+}
+
+.dummy-account-link:hover {
+  color: #495057;
+  text-decoration: underline;
+}
+
+/* Style untuk teks yang bisa dicopy */
+.copy-text {
+  cursor: pointer;
+  transition: background-color 0.2s;
+  user-select: all;
+}
+
+.copy-text:hover {
+  background-color: #e3f2fd;
+}
+
+.copy-text:active {
+  background-color: #bbdefb;
+}
 }
 
 /* Extra Small Mobile */

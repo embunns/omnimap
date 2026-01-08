@@ -107,6 +107,11 @@
               <button type="submit" class="btn btn-login w-100" id="btn-login">
                 Sign in
               </button>
+              <a href="#" class="dummy-account-link" data-bs-toggle="modal" data-bs-target="#dummyAccountModal">
+                <b>Lihat Akun Dummy</b>
+              </a>
+              <div class="text-center mt-3">
+
             </form>
           </div>
         </div>
@@ -136,7 +141,81 @@
         </div>
       </div>
     </div>
+    <!-- Modal Dummy Account -->
+    <div class="modal fade" id="dummyAccountModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title"><b>📋 Daftar Akun Dummy</b></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p class="text-muted mb-3">Klik username atau password untuk menyalin</p>
+            
+            <!-- Mahasiswa Accounts -->
+            <h6 class="mb-2"><b>Akun Mahasiswa:</b></h6>
+            <div class="table-responsive mb-4">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Username</th>
+                    <th>Password</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td class="copy-text">emibunns</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">aniladwi</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">joshuapinem</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">yasminaarethaya</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">rafiehamizan</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">rayhanaray</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">sitinurhaliza</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">budisantoso</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">dewilestari</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">ahmadfauzi</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">rinawijaya</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">ekoprasetyo</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">linamarlina</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">rudihartono</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">mayasari</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">fajarramadhan</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">indahpermata</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">rizkiananda</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">sariwulandari</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">hendragunawan</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">putrikusuma</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">nadiabintangwijaya</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">irfanekapratama</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">omarcahayamaharani</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">wawankusuma</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">aguswibowo</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">citracahayafirmansyah</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">tonoekapananti</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">vickywijaya</td><td class="copy-text">mahasiswa123</td></tr>
+                  <tr><td class="copy-text">omarutami</td><td class="copy-text">mahasiswa123</td></tr>
+                </tbody>
+              </table>
+            </div>
 
+            <!-- Admin Account -->
+            <h6 class="mb-2"><b>Akun Admin:</b></h6>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Username</th>
+                    <th>Password</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td class="copy-text">puti</td><td class="copy-text">admin123</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
@@ -206,6 +285,24 @@
             btnLogin.innerHTML = "Sign in";
           }
         });
+    // Copy functionality for dummy accounts
+    document.querySelectorAll('.copy-text').forEach(cell => {
+      cell.addEventListener('click', function() {
+        const text = this.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          // Visual feedback
+          const originalBg = this.style.backgroundColor;
+          this.style.backgroundColor = '#4caf50';
+          this.style.color = 'white';
+          
+          setTimeout(() => {
+            this.style.backgroundColor = originalBg;
+            this.style.color = '';
+          }, 300);
+        });
+      });
+    });
     </script>
+    
   </body>
 </html>
