@@ -480,8 +480,9 @@ html {
 }
   /* Style untuk link dummy account */
 /* Style untuk link dummy account */
+/* Style untuk link dummy account */
 .dummy-account-link {
-  color: #dc3545; /* Warna merah Bootstrap */
+  color: #dc3545;
   text-decoration: none;
   font-size: 14px;
   transition: all 0.3s;
@@ -489,15 +490,29 @@ html {
 }
 
 .dummy-account-link:hover {
-  color: #bb2d3b; /* Merah lebih gelap saat hover */
+  color: #bb2d3b;
   text-decoration: underline;
-  transform: translateY(1px);
 }
-/* Style untuk teks yang bisa dicopy */
+
+/* Fix modal z-index issues */
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+.modal {
+  z-index: 1055 !important;
+}
+
+.modal-backdrop.show {
+  opacity: 0.5 !important;
+}
+
+/* Style untuk copy text */
 .copy-text {
   cursor: pointer;
   transition: background-color 0.2s;
   user-select: all;
+  padding: 8px 12px;
 }
 
 .copy-text:hover {
